@@ -125,19 +125,43 @@ const DashboardHome = () => {
         >
           <FiAlertCircle className="text-amber-500 text-xl shrink-0" />
           <div className="flex-1">
-            <p className="font-medium text-amber-800">
-              Your trial/subscription has expired
-            </p>
-            <p className="text-sm text-amber-600">
-              Renew now to continue receiving unlimited vehicle alerts.
-            </p>
+            {rawPlans.length === 0 ? (
+              <>
+                <p className="font-medium text-amber-800">
+                  Assign vehicle to get your QR code tested
+                </p>
+                <p className="text-sm text-amber-600">
+                  Assign a vehicle to generate a QR sticker. You can run two
+                  quick tests to validate the qr code before renewing the
+                  subscription.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-amber-800">
+                  Your trial/subscription has expired
+                </p>
+                <p className="text-sm text-amber-600">
+                  Renew now to continue receiving unlimited vehicle alerts.
+                </p>
+              </>
+            )}
           </div>
-          <Link
-            to="/dashboard/plans"
-            className="btn-accent text-sm !py-2 shrink-0"
-          >
-            Renew <FiArrowRight className="ml-1" />
-          </Link>
+          {rawPlans.length === 0 ? (
+            <button
+              onClick={() => setShowAddVehicle(true)}
+              className="btn-accent text-sm !py-2 shrink-0"
+            >
+              Assign Vehicle
+            </button>
+          ) : (
+            <Link
+              to="/dashboard/plans"
+              className="btn-accent text-sm !py-2 shrink-0"
+            >
+              Renew <FiArrowRight className="ml-1" />
+            </Link>
+          )}
         </motion.div>
       )}
 
@@ -323,7 +347,7 @@ const DashboardHome = () => {
         className="card p-6"
       >
         <h3 className="font-display font-semibold text-lg text-gray-800 mb-4">
-          My Vehicle & QR Stickers
+          My QR Stickers
         </h3>
         {!primaryQrCode ? (
           <div className="text-center py-8 text-gray-400">
