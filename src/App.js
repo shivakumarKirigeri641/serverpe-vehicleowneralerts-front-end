@@ -38,6 +38,8 @@ const Stickers = lazy(() => import("./pages/dashboard/Stickers"));
 const Renewals = lazy(() => import("./pages/dashboard/Renewals"));
 const Profile = lazy(() => import("./pages/dashboard/Profile"));
 const Help = lazy(() => import("./pages/dashboard/Help"));
+const PaymentSummary = lazy(() => import("./pages/dashboard/PaymentSummary"));
+const PaymentSuccess = lazy(() => import("./pages/dashboard/PaymentSuccess"));
 
 const AppLayout = () => {
   const location = useLocation();
@@ -83,6 +85,8 @@ const AppLayout = () => {
             <Route index element={<DashboardHome />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="plans" element={<DashboardPlans />} />
+            <Route path="payment-summary" element={<PaymentSummary />} />
+            <Route path="payment-success" element={<PaymentSuccess />} />
             <Route path="stickers" element={<Stickers />} />
             <Route path="renewals" element={<Renewals />} />
             <Route path="profile" element={<Profile />} />

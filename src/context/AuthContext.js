@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { createContext, useContext, useState, useCallback } from "react";
 import { vehicleOwnerLogout } from "../services/api";
 
 const AuthContext = createContext(null);
@@ -44,7 +38,7 @@ const normalizeOwnerData = (apiData, verifyOtpData = null) => {
 
 export const AuthProvider = ({ children }) => {
   const [owner, setOwner] = useState(() => {
-    const saved = localStorage.getItem("vehicleOwner");
+    const saved = sessionStorage.getItem("vehicleOwner");
     return saved ? JSON.parse(saved) : null;
   });
   const [isAuthenticated, setIsAuthenticated] = useState(!!owner);
@@ -53,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     const normalizedData = normalizeOwnerData(ownerData, verifyOtpData);
     setOwner(normalizedData);
     setIsAuthenticated(true);
-    localStorage.setItem("vehicleOwner", JSON.stringify(normalizedData));
+    sessionStorage.setItem("vehicleOwner", JSON.stringify(normalizedData));
   };
 
   const logout = useCallback(async (callApi = true) => {
@@ -64,21 +58,8 @@ export const AuthProvider = ({ children }) => {
     }
     setOwner(null);
     setIsAuthenticated(false);
-    localStorage.removeItem("vehicleOwner");
+    sessionStorage.removeItem("vehicleOwner");
   }, []);
-
-  // Logout on browser/tab close
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (isAuthenticated) {
-        navigator.sendBeacon(
-          `${process.env.REACT_APP_API_URL || "http://localhost:7777"}/vehicleowner/credentials/logout`,
-        );
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [isAuthenticated]);
 
   return (
     <AuthContext.Provider value={{ owner, isAuthenticated, login, logout }}>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   FiCheckCircle,
@@ -12,22 +13,26 @@ import { getSubscriptionPlans } from "../../services/api";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
 const DashboardPlans = () => {
+  const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  console.log(plans);
   useEffect(() => {
     getSubscriptionPlans()
-      .then((res) => setPlans(res.data?.data || []))
+      .then((res) => {
+        // Filter out free plans (price === 0)
+        const filteredPlans = (res.data?.data || []).filter(
+          (plan) => parseFloat(plan.price) !== 0,
+        );
+        setPlans(filteredPlans);
+      })
       .catch(() => toast.error("Failed to load plans"))
       .finally(() => setLoading(false));
   }, []);
 
   const handleSelectPlan = async (plan) => {
-    if (plan.comparable_price === 0) {
-      toast("You already have the free plan!", { icon: "ℹ️" });
-      return;
-    }
-    toast("Payment integration will be available soon!", { icon: "🔜" });
+    // Navigate to payment summary with plan ID
+    navigate(`/dashboard/payment-summary?planId=${plan.rpid}`);
   };
 
   if (loading) return <LoadingSpinner message="Loading plans..." />;
@@ -68,11 +73,16 @@ const DashboardPlans = () => {
             </p>
 
             <div className="mb-6">
-              <span className="font-display text-4xl font-bold text-gray-900">
-                {plan.comparable_price === 0
-                  ? "FREE"
-                  : `₹${plan.comparable_price}`}
-              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="font-display text-4xl font-bold text-gray-900">
+                  ₹{plan.price}
+                </span>
+                {plan.comparable_price > plan.price && (
+                  <span className="text-lg text-gray-400 line-through">
+                    ₹{plan.comparable_price}
+                  </span>
+                )}
+              </div>
             </div>
 
             <ul className="space-y-2 mb-6 flex-1 text-sm">

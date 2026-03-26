@@ -16,7 +16,6 @@ const Plans = () => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const fetchPlans = () => {
     setLoading(true);
     setError("");

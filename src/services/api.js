@@ -21,7 +21,7 @@ api.interceptors.response.use(
       // Only logout if it's NOT a business logic error (e.g., actual auth failure)
       // Business logic errors (like "mobile number not found") should be handled by the component
       if (!hasApiStructure) {
-        localStorage.removeItem("vehicleOwner");
+        sessionStorage.removeItem("vehicleOwner");
         if (!window.location.pathname.includes("/scan/")) {
           window.location.href = "/login";
         }
