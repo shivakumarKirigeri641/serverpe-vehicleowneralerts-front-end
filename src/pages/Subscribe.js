@@ -62,7 +62,8 @@ const Subscribe = () => {
       });
       if (res.data?.successstatus) {
         toast.success("Subscription successful! Welcome!");
-        login(res.data.data);
+        // Pass full verify OTP response as second parameter
+        login(res.data.data?.vehicle_owner_info?.[0], res.data.data);
         navigate("/dashboard");
       } else {
         toast.error(res.data?.message || "Invalid OTP");
@@ -148,7 +149,8 @@ const Subscribe = () => {
                   />
                 </div>
                 <p className="text-xs text-gray-400 mt-1">
-                  Your number will be kept 100% confidential
+                  ✓ Vehicle owner mobile number is fully protected and kept
+                  confidential
                 </p>
               </div>
 

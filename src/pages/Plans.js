@@ -372,6 +372,14 @@ const Plans = () => {
                     times may vary based on owner availability and
                     circumstances.
                   </p>
+                  <p>
+                    <strong>Mobile Number Protection:</strong> Vehicle owner
+                    mobile numbers are fully protected and kept highly
+                    confidential. The public cannot access, see, or contact the
+                    vehicle owner directly. All communications are facilitated
+                    solely through ServerPe App Solutions platform to ensure
+                    complete privacy and security.
+                  </p>
                 </div>
               </motion.div>
 

@@ -12,7 +12,7 @@ const Login = () => {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [mobileNumber, setMobileNumber] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("6549873150");
   const [otp, setOtp] = useState("");
 
   const handleSendOtp = async (e) => {
@@ -32,10 +32,12 @@ const Login = () => {
         toast.error(res.data?.message || "Failed to send OTP");
       }
     } catch (err) {
-      toast.error(
+      // Enhanced error handling to ensure message is displayed
+      const errorMessage =
         err.response?.data?.message ||
-          "Failed to send OTP. Are you subscribed?",
-      );
+        err.response?.data?.error ||
+        "Failed to send OTP";
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -50,7 +52,8 @@ const Login = () => {
       const res = await verifyLoginOtp({ mobile_number: mobileNumber, otp });
       if (res.data?.successstatus) {
         toast.success("Login successful!");
-        login(res.data.data);
+        // Pass full verify OTP response as second parameter
+        login(res.data.data?.vehicle_owner_info?.[0], res.data.data);
         navigate("/dashboard");
       } else {
         toast.error(res.data?.message || "Invalid OTP");
@@ -120,6 +123,12 @@ const Login = () => {
                     autoFocus
                   />
                 </div>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
+                <strong>🔒 Security:</strong> Your mobile number is fully
+                protected, kept strictly confidential, and never shared with
+                anyone.
               </div>
 
               <label className="flex items-start gap-3 cursor-pointer">

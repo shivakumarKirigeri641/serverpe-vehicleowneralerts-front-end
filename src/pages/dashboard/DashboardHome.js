@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -7,24 +7,56 @@ import {
   FiAlertCircle,
   FiPlus,
   FiArrowRight,
+  FiUser,
+  FiClock,
 } from "react-icons/fi";
 import { HiOutlineQrCode } from "react-icons/hi2";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
-import { addQRCodeSticker } from "../../services/api";
+import { addQRCodeSticker, getMyScans } from "../../services/api";
 
 const DashboardHome = () => {
   const { owner } = useAuth();
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [adding, setAdding] = useState(false);
+  const [scans, setScans] = useState([]);
+  const [scansLoading, setScansLoading] = useState(true);
 
-  // Extract data from owner context
-  const vehicles = owner?.qr_code_mappings || [];
-  const subscriptions = owner?.active_subscriptions || [];
-  const hasActiveSubscription = subscriptions.some(
-    (s) => s.is_active && new Date(s.effective_until) >= new Date(),
+  // Extract data from owner context (from verify-otp response)
+  const qrCodes = owner?.qrCodeInfo || [];
+  const rawPlans = owner?.subscriptionPlans || [];
+  // Deduplicate subscription plans by vosid
+  const subscriptionPlans = rawPlans.filter(
+    (plan, index, self) =>
+      index === self.findIndex((p) => p.vosid === plan.vosid),
   );
+  const hasActiveSubscription = subscriptionPlans.some(
+    (s) => new Date(s.effective_until) >= new Date(),
+  );
+  const activePlan = subscriptionPlans.find(
+    (s) => new Date(s.effective_until) >= new Date(),
+  );
+
+  useEffect(() => {
+    const fetchScans = async () => {
+      try {
+        const res = await getMyScans();
+        if (res.data?.successstatus) {
+          setScans(res.data.data || []);
+        }
+      } catch (err) {
+        // Silently fail — scans are non-critical
+      } finally {
+        setScansLoading(false);
+      }
+    };
+    fetchScans();
+  }, []);
+
+  // Vehicle owner has single vehicle mapped to QR sticker
+  const primaryVehicle = owner?.vehicle_number || "—";
+  const primaryQrCode = qrCodes.length > 0 ? qrCodes[0] : null;
 
   const handleAddVehicle = async (e) => {
     e.preventDefault();
@@ -96,29 +128,28 @@ const DashboardHome = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           {
-            label: "Vehicles",
-            value: vehicles.length,
+            label: "Vehicle Number",
+            value: primaryVehicle,
             icon: <HiOutlineQrCode />,
             color: "bg-blue-100 text-blue-600",
           },
           {
             label: "Total Alerts",
-            value: "—",
+            value: scansLoading ? "…" : String(scans.length),
             icon: <FiBell />,
             color: "bg-green-100 text-green-600",
           },
           {
             label: "Active Plan",
-            value:
-              subscriptions.length > 0
-                ? subscriptions[0]?.recharge_name || "—"
-                : "None",
+            value: activePlan?.recharge_name || "—",
             icon: <FiCreditCard />,
             color: "bg-purple-100 text-purple-600",
           },
           {
-            label: "Today Alerts",
-            value: "—",
+            label: "Plan Expires",
+            value: activePlan
+              ? new Date(activePlan.effective_until).toLocaleDateString("en-IN")
+              : "—",
             icon: <FiBell />,
             color: "bg-amber-100 text-amber-600",
           },
@@ -145,51 +176,56 @@ const DashboardHome = () => {
 
       {/* Quick Actions */}
       <div className="grid md:grid-cols-2 gap-6 mb-8">
-        {/* Add Vehicle */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="card p-6"
-        >
-          <h3 className="font-display font-semibold text-lg text-gray-800 mb-4 flex items-center gap-2">
-            <HiOutlineQrCode className="text-primary-500" /> Add New Vehicle
-          </h3>
-          {!showAddVehicle ? (
-            <button
-              onClick={() => setShowAddVehicle(true)}
-              className="btn-primary gap-2 text-sm"
-            >
-              <FiPlus /> Add QR Code Sticker
-            </button>
-          ) : (
-            <form onSubmit={handleAddVehicle} className="space-y-3">
-              <input
-                type="text"
-                value={vehicleNumber}
-                onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                className="input-field"
-                placeholder="e.g., KA01AB1234"
-              />
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={adding}
-                  className="btn-primary text-sm disabled:opacity-50 flex-1"
-                >
-                  {adding ? "Adding..." : "Add Vehicle"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddVehicle(false)}
-                  className="btn-secondary text-sm"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
-        </motion.div>
+        {/* Add Vehicle - Only show if no vehicle mapped */}
+        {!primaryQrCode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="card p-6"
+          >
+            <h3 className="font-display font-semibold text-lg text-gray-800 mb-4 flex items-center gap-2">
+              <HiOutlineQrCode className="text-primary-500" /> Add Vehicle & Get
+              QR
+            </h3>
+            {!showAddVehicle ? (
+              <button
+                onClick={() => setShowAddVehicle(true)}
+                className="btn-primary gap-2 text-sm"
+              >
+                <FiPlus /> Add QR Code Sticker
+              </button>
+            ) : (
+              <form onSubmit={handleAddVehicle} className="space-y-3">
+                <input
+                  type="text"
+                  value={vehicleNumber}
+                  onChange={(e) =>
+                    setVehicleNumber(e.target.value.toUpperCase())
+                  }
+                  className="input-field"
+                  placeholder="e.g., KA01AB1234"
+                />
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    disabled={adding}
+                    className="btn-primary text-sm disabled:opacity-50 flex-1"
+                  >
+                    {adding ? "Adding..." : "Add Vehicle"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddVehicle(false)}
+                    className="btn-secondary text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+          </motion.div>
+        )}
 
         {/* Recent Alerts */}
         <motion.div
@@ -201,13 +237,64 @@ const DashboardHome = () => {
           <h3 className="font-display font-semibold text-lg text-gray-800 mb-4 flex items-center gap-2">
             <FiBell className="text-green-500" /> Recent Alerts
           </h3>
-          <div className="text-center py-8 text-gray-400">
-            <FiBell className="text-4xl mx-auto mb-3 text-gray-300" />
-            <p className="text-sm">No recent alerts</p>
-            <p className="text-xs mt-1">
-              Alerts will appear here when someone scans your QR code
-            </p>
-          </div>
+          {scansLoading ? (
+            <div className="text-center py-8 text-gray-400">
+              <p className="text-sm">Loading alerts…</p>
+            </div>
+          ) : scans.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <FiBell className="text-4xl mx-auto mb-3 text-gray-300" />
+              <p className="text-sm">No alerts yet</p>
+              <p className="text-xs mt-1">
+                Alerts will appear here when someone scans your QR code
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {scans.slice(0, 5).map((scan, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 p-3 bg-green-50 rounded-xl border border-green-100"
+                >
+                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+                    <FiBell className="text-green-600 text-sm" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800">
+                      {scan.phrase}
+                    </p>
+                    {scan.description &&
+                      scan.description !==
+                        "Type a short custom message to vehicle owner!" && (
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">
+                          {scan.description}
+                        </p>
+                      )}
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="flex items-center gap-1 text-xs text-gray-400">
+                        <FiUser className="text-xs" />
+                        {scan.is_verified_user ? "Verified" : "Anonymous"}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-gray-400">
+                        <FiClock className="text-xs" />
+                        {new Date(scan.created_at).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {scans.length > 5 && (
+                <p className="text-xs text-center text-gray-400 pt-1">
+                  +{scans.length - 5} more alerts — view all in Alerts tab
+                </p>
+              )}
+            </div>
+          )}
         </motion.div>
       </div>
 
@@ -219,48 +306,107 @@ const DashboardHome = () => {
         className="card p-6"
       >
         <h3 className="font-display font-semibold text-lg text-gray-800 mb-4">
-          My Vehicles
+          My Vehicle & QR Stickers
         </h3>
-        {vehicles.length === 0 ? (
+        {!primaryQrCode ? (
           <div className="text-center py-8 text-gray-400">
             <HiOutlineQrCode className="text-4xl mx-auto mb-3 text-gray-300" />
-            <p className="text-sm">No vehicles added yet</p>
+            <p className="text-sm">No QR stickers added yet</p>
             <p className="text-xs mt-1">
               Add a vehicle above to get your QR code sticker
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {vehicles.map((v, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl"
-              >
-                <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
-                  <HiOutlineQrCode className="text-primary-600 text-xl" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-800">
-                    {v.vehicle_number || "Vehicle"}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    QR Code: {v.qrcode_number?.slice(0, 8)}...
-                  </p>
-                </div>
+            <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                <HiOutlineQrCode className="text-blue-600 text-xl" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-800">{primaryVehicle}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  QR Code: {primaryQrCode?.qrcode_id || "—"}
+                </p>
+              </div>
+              <div className="text-right text-xs">
                 <span
-                  className={`text-xs font-medium px-3 py-1 rounded-full ${
-                    v.is_qr_code_issued
-                      ? "bg-green-100 text-green-700"
-                      : "bg-amber-100 text-amber-700"
+                  className={`inline-block px-2 py-1 rounded text-white text-xs font-medium ${
+                    primaryQrCode?.is_working ? "bg-green-500" : "bg-gray-400"
                   }`}
                 >
-                  {v.is_qr_code_issued ? "Active" : "Pending"}
+                  {primaryQrCode?.is_working ? "Active" : "InActive"}
                 </span>
               </div>
-            ))}
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 text-sm">
+              <p className="text-gray-600 font-medium mb-2">Sticker Status:</p>
+              <ul className="space-y-1 text-xs text-gray-500">
+                <li>
+                  • QR Tested: {primaryQrCode?.is_qr_code_tested ? "✓" : "✗"}
+                </li>
+                <li>• Delivered: {primaryQrCode?.is_delivered ? "✓" : "✗"}</li>
+                <li>• Blocked: {primaryQrCode?.is_blocked ? "✓" : "✗"}</li>
+              </ul>
+            </div>
           </div>
         )}
       </motion.div>
+
+      {/* Active Subscription Plans */}
+      {subscriptionPlans.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="card p-6 mt-8"
+        >
+          <h3 className="font-display font-semibold text-lg text-gray-800 mb-4 flex items-center gap-2">
+            <FiCreditCard className="text-purple-500" /> Active Subscription
+          </h3>
+          <div className="space-y-3">
+            {subscriptionPlans.map((plan, i) => (
+              <div
+                key={i}
+                className="flex items-start justify-between p-4 bg-purple-50 rounded-xl border border-purple-100"
+              >
+                <div>
+                  <p className="font-semibold text-gray-800">
+                    {plan.recharge_name}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {plan.recharge_description}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Active from:{" "}
+                    <strong>
+                      {new Date(plan.effective_from).toLocaleDateString()}
+                    </strong>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Expires:{" "}
+                    <strong>
+                      {new Date(plan.effective_until).toLocaleDateString()}
+                    </strong>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full text-white text-xs font-medium ${
+                      new Date(plan.effective_until) >= new Date()
+                        ? "bg-green-500"
+                        : "bg-red-500"
+                    }`}
+                  >
+                    {new Date(plan.effective_until) >= new Date()
+                      ? "Active"
+                      : "Expired"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };

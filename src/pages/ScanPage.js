@@ -203,6 +203,20 @@ const ScanPage = () => {
           </div>
         </motion.div>
 
+        {/* Privacy Notice */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-6 bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800"
+        >
+          <p className="font-medium">
+            🔒 <strong>Vehicle Owner Privacy:</strong> The owner's mobile number
+            is fully protected and kept confidential. It will never be shared or
+            visible to you.
+          </p>
+        </motion.div>
+
         {/* Concern Form */}
         <motion.form
           initial={{ opacity: 0, y: 20 }}

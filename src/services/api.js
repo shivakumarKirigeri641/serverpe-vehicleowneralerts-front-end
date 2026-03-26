@@ -13,10 +13,18 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Check if it's a 401 response with proper API structure (business logic error)
+    // vs actual auth failure. Business logic 401s have successstatus field.
     if (error.response?.status === 401) {
-      localStorage.removeItem("vehicleOwner");
-      if (!window.location.pathname.includes("/scan/")) {
-        window.location.href = "/login";
+      const hasApiStructure = error.response?.data?.successstatus !== undefined;
+
+      // Only logout if it's NOT a business logic error (e.g., actual auth failure)
+      // Business logic errors (like "mobile number not found") should be handled by the component
+      if (!hasApiStructure) {
+        localStorage.removeItem("vehicleOwner");
+        if (!window.location.pathname.includes("/scan/")) {
+          window.location.href = "/login";
+        }
       }
     }
     return Promise.reject(error);
@@ -52,5 +60,6 @@ export const createPaymentOrder = (data) =>
   api.post("/vehicleowner/credentials/payment/create-order", data);
 export const verifyPayment = (data) =>
   api.post("/vehicleowner/credentials/payment/verify", data);
+export const getMyScans = () => api.get("/vehicleowner/credentials/myscans");
 
 export default api;
