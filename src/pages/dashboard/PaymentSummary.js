@@ -322,6 +322,11 @@ const PaymentSummary = () => {
               ✓ You can download the invoice immediately after successful
               payment.
             </p>
+            <p className="mt-2 font-medium text-amber-900">
+              Note: Renewing a plan will overwrite your current subscription.
+              Please ensure you intend to replace the existing plan before
+              proceeding.
+            </p>
           </motion.div>
         </div>
 
