@@ -262,7 +262,7 @@ const Home = () => {
               {
                 icon: <FiSmartphone />,
                 step: "01",
-                title: "Subscribe & Add Vehicle",
+                title: "Subscribe & Assign Vehicle",
                 desc: "Sign up with your name and mobile number. Add your vehicle number from the dashboard. It takes less than 2 minutes.",
               },
               {

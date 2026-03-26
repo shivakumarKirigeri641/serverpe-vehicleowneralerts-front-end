@@ -49,7 +49,7 @@ export const sendSubscriptionOtp = (data) =>
 export const sendLoginOtp = (data) =>
   api.post("/vehicleowner/login/send-otp", data);
 export const verifyLoginOtp = (data) =>
-  api.post("/vehicleowner/loginorsubscription/verify-otp", data);
+  api.post("/vehicleowner/login/verify-otp", data);
 
 // Vehicle Owner Protected
 export const vehicleOwnerLogout = () =>

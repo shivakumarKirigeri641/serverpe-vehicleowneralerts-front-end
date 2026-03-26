@@ -29,6 +29,7 @@ const DashboardHome = () => {
   // Extract data from owner context (from verify-otp response)
   const qrCodes = owner?.qrCodeInfo || [];
   const rawPlans = owner?.subscriptionPlans || [];
+  console.log("rawplans:", rawPlans);
   // Deduplicate subscription plans by vosid
   const subscriptionPlans = rawPlans.filter(
     (plan, index, self) =>
@@ -89,10 +90,10 @@ const DashboardHome = () => {
         setShowAddVehicle(false);
         setVehicleNumber("");
       } else {
-        toast.error(res.data?.message || "Failed to add vehicle");
+        toast.error(res.data?.message || "Failed to assign vehicle");
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to add vehicle");
+      toast.error(err.response?.data?.message || "Failed to assign vehicle");
     } finally {
       setAdding(false);
     }
@@ -192,7 +193,7 @@ const DashboardHome = () => {
 
       {/* Quick Actions */}
       <div className="grid md:grid-cols-2 gap-6 mb-8">
-        {/* Add Vehicle - Only show if no vehicle mapped */}
+        {/* Assign Vehicle - Only show if no vehicle mapped */}
         {!primaryQrCode && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -201,15 +202,15 @@ const DashboardHome = () => {
             className="card p-6"
           >
             <h3 className="font-display font-semibold text-lg text-gray-800 mb-4 flex items-center gap-2">
-              <HiOutlineQrCode className="text-primary-500" /> Add Vehicle & Get
-              QR
+              <HiOutlineQrCode className="text-primary-500" /> Assign Vehicle &
+              Get QR
             </h3>
             {!showAddVehicle ? (
               <button
                 onClick={() => setShowAddVehicle(true)}
                 className="btn-primary gap-2 text-sm"
               >
-                <FiPlus /> Add QR Code Sticker
+                <FiPlus /> Assign my vehicle
               </button>
             ) : (
               <form onSubmit={handleAddVehicle} className="space-y-3">
@@ -228,7 +229,7 @@ const DashboardHome = () => {
                     disabled={adding}
                     className="btn-primary text-sm disabled:opacity-50 flex-1"
                   >
-                    {adding ? "Adding..." : "Add Vehicle"}
+                    {adding ? "Assigning..." : "Assign Vehicle"}
                   </button>
                   <button
                     type="button"
