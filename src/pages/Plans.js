@@ -298,16 +298,89 @@ const Plans = () => {
                   <h3 className="font-display font-bold text-xl text-gray-800 mb-2">
                     Premium QR Code Stickers
                   </h3>
-                  <p className="text-gray-500 leading-relaxed">
+                  <p className="text-gray-500 leading-relaxed mb-4">
                     Every plan includes premium quality{" "}
                     <strong>waterproof, vinyl matte</strong> QR code stickers
                     designed to last. They're weather-resistant, UV-protected,
-                    and built for outdoor use. We deliver 2 stickers free after
-                    your first subscription — stick them on your windshield,
-                    rear window, or anywhere visible to the public.
+                    and built for outdoor use.
+                  </p>
+                  <div className="space-y-3 text-sm text-gray-600">
+                    <div>
+                      <p className="font-semibold text-gray-800 mb-1">
+                        Sticker Delivery:
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>
+                          First-time subscription: Digital QR for testing
+                          purposes only
+                        </li>
+                        <li>
+                          Subsequent subscriptions & renewals: 2 identical
+                          waterproof stickers delivered
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800 mb-1">
+                        Placement Guidelines:
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>
+                          Stick on completely visible and accessible locations
+                          (e.g., windshield, rear window)
+                        </li>
+                        <li>
+                          Ensure the QR code is easily scannable by the public
+                        </li>
+                        <li>
+                          Avoid placing in hard-to-reach or obscured areas
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+              {/* Responsibility Disclaimer */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="mt-12 card p-8 bg-amber-50 border border-amber-200"
+              >
+                <h3 className="font-display font-bold text-lg text-gray-800 mb-4">
+                  Important Disclaimer
+                </h3>
+                <div className="space-y-3 text-sm text-gray-700">
+                  <p>
+                    <strong>Service Scope:</strong> ServerPe App Solutions is
+                    responsible solely for alerting the respective vehicle
+                    owners about concerns raised by the public. We are{" "}
+                    <strong>not responsible</strong> for any vehicle-related
+                    issues, damages, or incidents that occur.
+                  </p>
+                  <p>
+                    <strong>Owner Responsibility:</strong> Vehicle owners are
+                    solely responsible for taking timely action after receiving
+                    an alert. ServerPe App Solutions is{" "}
+                    <strong>not responsible</strong> if owners delay in
+                    responding to or addressing alerts.
+                  </p>
+                  <p>
+                    <strong>Public Expectation:</strong> Members of the public
+                    who report concerns must understand that they should wait
+                    for the vehicle owner to respond and take action. Response
+                    times may vary based on owner availability and
+                    circumstances.
                   </p>
                 </div>
               </motion.div>
+
+              {/* Powered by */}
+              <div className="mt-12 text-center">
+                <p className="text-sm text-gray-500">
+                  Powered by <strong>ServerPe App Solutions</strong>
+                </p>
+              </div>
             </>
           )}
         </div>

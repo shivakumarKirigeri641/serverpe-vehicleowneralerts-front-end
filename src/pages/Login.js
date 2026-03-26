@@ -87,6 +87,12 @@ const Login = () => {
                 ? "Login to your Vehicle Alerts dashboard"
                 : `Enter the 4-digit OTP sent to ${mobileNumber}`}
             </p>
+            <Link
+              to="/"
+              className="inline-block mt-3 text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
+            >
+              ← Back to Home
+            </Link>
           </div>
 
           {step === 1 ? (

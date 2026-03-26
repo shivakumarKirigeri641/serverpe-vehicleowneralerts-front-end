@@ -112,7 +112,7 @@ const ScanPage = () => {
           </h2>
           <p className="text-gray-500 mb-6">{error}</p>
           <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-            <FiShield /> Powered by ServerPe
+            <FiShield /> Powered by ServerPe App Solutions
           </div>
         </motion.div>
       </div>
@@ -150,7 +150,7 @@ const ScanPage = () => {
             {customMessage && <p className="mt-1 text-xs">"{customMessage}"</p>}
           </div>
           <div className="flex items-center justify-center gap-2 text-xs text-gray-400 mt-6">
-            <FiShield /> Powered by ServerPe Vehicle Alerts
+            <FiShield /> Powered by ServerPe App Solutions
           </div>
         </motion.div>
       </div>

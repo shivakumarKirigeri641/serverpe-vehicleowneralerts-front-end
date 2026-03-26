@@ -100,6 +100,12 @@ const Subscribe = () => {
                 ? "Subscribe to protect your vehicle with smart QR alerts"
                 : `Enter the 4-digit OTP sent to ${form.mobile_number}`}
             </p>
+            <Link
+              to="/"
+              className="inline-block mt-3 text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
+            >
+              ← Back to Home
+            </Link>
           </div>
 
           {step === 1 ? (
@@ -144,6 +150,13 @@ const Subscribe = () => {
                 <p className="text-xs text-gray-400 mt-1">
                   Your number will be kept 100% confidential
                 </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800 leading-relaxed">
+                <strong>Note:</strong> On successful subscription, you will
+                receive a digital QR for testing. You will receive{" "}
+                <strong>2 identical waterproof stickers</strong> on subsequent
+                renewals or as per your plan terms.
               </div>
 
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 leading-relaxed">
