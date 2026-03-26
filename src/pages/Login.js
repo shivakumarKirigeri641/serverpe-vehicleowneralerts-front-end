@@ -12,7 +12,7 @@ const Login = () => {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [mobileNumber, setMobileNumber] = useState("9876543210");
+  const [mobileNumber, setMobileNumber] = useState("9876543218");
   const [otp, setOtp] = useState("1234");
 
   const handleSendOtp = async (e) => {

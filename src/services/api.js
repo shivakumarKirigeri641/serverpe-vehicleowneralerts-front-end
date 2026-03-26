@@ -43,6 +43,10 @@ export const submitScan = (data) => api.post("/vehiclealerts/submitscan", data);
 export const reportMisuse = (qrcodeNumber) =>
   api.post(`/vehiclealerts/report-misuse/${qrcodeNumber}`);
 
+// Public check for vehicle subscription status (unauthenticated)
+export const checkSubscriptionStatus = (vehicleNumber) =>
+  api.get(`/vehiclealerts/check-subscription-status/${vehicleNumber}`);
+
 // Vehicle Owner Auth
 export const sendSubscriptionOtp = (data) =>
   api.post("/vehicleowner/subscription/send-otp", data);
@@ -61,5 +65,9 @@ export const createPaymentOrder = (data) =>
 export const verifyPayment = (data) =>
   api.post("/vehicleowner/credentials/payment/verify", data);
 export const getMyScans = () => api.get("/vehicleowner/credentials/myscans");
+export const getDashboard = () =>
+  api.get("/vehicleowner/credentials/dashboard");
+export const getQRCodeImage = () =>
+  api.get("/vehicleowner/credentials/qrcodeimage", { responseType: "blob" });
 
 export default api;

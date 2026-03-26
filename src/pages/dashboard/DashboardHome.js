@@ -14,10 +14,15 @@ import {
 import { HiOutlineQrCode } from "react-icons/hi2";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
-import { addQRCodeSticker, getMyScans } from "../../services/api";
+import {
+  addQRCodeSticker,
+  getMyScans,
+  getQRCodeImage,
+  checkSubscriptionStatus,
+} from "../../services/api";
 
 const DashboardHome = () => {
-  const { owner } = useAuth();
+  const { owner, refreshOwner } = useAuth();
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [adding, setAdding] = useState(false);
@@ -25,6 +30,12 @@ const DashboardHome = () => {
   const [scansLoading, setScansLoading] = useState(true);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderQuantity, setOrderQuantity] = useState(1);
+  const [qrImageUrl, setQrImageUrl] = useState(null);
+  const [subscriptionCheck, setSubscriptionCheck] = useState({
+    loading: false,
+    message: null,
+    active: null,
+  });
 
   // Extract data from owner context (from verify-otp response)
   const qrCodes = owner?.qrCodeInfo || [];
@@ -56,7 +67,71 @@ const DashboardHome = () => {
       }
     };
     fetchScans();
+
+    (async () => {
+      // refresh owner/dashboard data on mount
+      if (typeof refreshOwner === "function") await refreshOwner();
+
+      // attempt to fetch the QR image for quick testing if available
+      try {
+        const imgRes = await getQRCodeImage();
+        if (imgRes && imgRes.data) {
+          const blob = imgRes.data;
+          const url = window.URL.createObjectURL(blob);
+          // revoke previous URL if any
+          if (qrImageUrl) {
+            try {
+              window.URL.revokeObjectURL(qrImageUrl);
+            } catch (e) {}
+          }
+          setQrImageUrl(url);
+        }
+      } catch (err) {
+        // non-fatal — some users may not have an image yet
+        console.warn("QR image fetch on mount failed:", err?.message || err);
+      }
+    })();
   }, []);
+
+  // cleanup object URL on unmount / when url changes
+  useEffect(() => {
+    return () => {
+      if (qrImageUrl) {
+        try {
+          window.URL.revokeObjectURL(qrImageUrl);
+        } catch (e) {}
+      }
+    };
+  }, [qrImageUrl]);
+
+  // check subscription status for the primary vehicle (public endpoint)
+  useEffect(() => {
+    const vehicleNumber = owner?.vehicle_number;
+    if (!vehicleNumber) return;
+
+    let mounted = true;
+    (async () => {
+      try {
+        setSubscriptionCheck({ loading: true, message: null, active: null });
+        const res = await checkSubscriptionStatus(vehicleNumber);
+        if (!mounted) return;
+        const msg = res.data?.message || "Status unavailable";
+        const active = Boolean(res.data?.successstatus && /active/i.test(msg));
+        setSubscriptionCheck({ loading: false, message: msg, active });
+      } catch (err) {
+        if (!mounted) return;
+        setSubscriptionCheck({
+          loading: false,
+          message: "Check failed",
+          active: null,
+        });
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [owner?.vehicle_number]);
 
   // Vehicle owner has single vehicle mapped to QR sticker
   const primaryVehicle = owner?.vehicle_number || "—";
@@ -89,6 +164,25 @@ const DashboardHome = () => {
         toast.success("Vehicle added! QR code generated.");
         setShowAddVehicle(false);
         setVehicleNumber("");
+        // refresh dashboard/owner and fetch QR image for inline display
+        try {
+          if (typeof refreshOwner === "function") await refreshOwner();
+          // try to fetch qr image
+          const imgRes = await getQRCodeImage();
+          if (imgRes && imgRes.data) {
+            const blob = imgRes.data;
+            const url = window.URL.createObjectURL(blob);
+            if (qrImageUrl) {
+              try {
+                window.URL.revokeObjectURL(qrImageUrl);
+              } catch (e) {}
+            }
+            setQrImageUrl(url);
+          }
+        } catch (err) {
+          // Non-fatal; show toast
+          console.warn("QR image fetch failed", err);
+        }
       } else {
         toast.error(res.data?.message || "Failed to assign vehicle");
       }
@@ -275,6 +369,19 @@ const DashboardHome = () => {
           transition={{ delay: 0.4 }}
           className="card p-6"
         >
+          {subscriptionCheck.message && (
+            <div
+              className={`mb-3 p-2 rounded text-sm ${
+                subscriptionCheck.active === true
+                  ? "bg-green-50 text-green-700"
+                  : subscriptionCheck.active === false
+                    ? "bg-red-50 text-red-700"
+                    : "bg-gray-50 text-gray-700"
+              }`}
+            >
+              {subscriptionCheck.message}
+            </div>
+          )}
           <h3 className="font-display font-semibold text-lg text-gray-800 mb-4 flex items-center gap-2">
             <FiBell className="text-green-500" /> Recent Alerts
           </h3>
@@ -378,6 +485,16 @@ const DashboardHome = () => {
                   {primaryQrCode?.is_working ? "Active" : "InActive"}
                 </span>
               </div>
+              {/* Inline QR image (small) */}
+              {qrImageUrl && (
+                <div className="ml-4">
+                  <img
+                    src={qrImageUrl}
+                    alt="QR code"
+                    className="w-28 h-28 object-contain rounded-md border"
+                  />
+                </div>
+              )}
               <button
                 onClick={() => setShowOrderModal(true)}
                 className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary-100 hover:bg-primary-200 text-primary-600 transition-colors shrink-0"
