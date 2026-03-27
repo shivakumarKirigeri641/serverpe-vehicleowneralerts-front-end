@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FiStar, FiSend } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -7,45 +7,52 @@ const Feedback = () => {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [userName, setUserName] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Placeholder feedbacks
-  const feedbacks = [
-    {
-      id: 1,
-      rating: 5,
-      comment:
-        "Amazing concept! My vehicle was blocking someone and they alerted me instantly.",
-      date: "2 days ago",
-    },
-    {
-      id: 2,
-      rating: 4,
-      comment: "Very useful service. QR sticker quality is excellent.",
-      date: "5 days ago",
-    },
-    {
-      id: 3,
-      rating: 5,
-      comment: "Finally a solution for parking problems. Love it!",
-      date: "1 week ago",
-    },
-    {
-      id: 4,
-      rating: 4,
-      comment:
-        "Good service, easy to use. Hope WhatsApp alerts come soon for free plan.",
-      date: "2 weeks ago",
-    },
-  ];
+  // Fetch feedbacks from API
+  useEffect(() => {
+    setLoading(true);
+    fetch("http://localhost:7777/vehiclealerts/feedbacks")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.successstatus && data.data?.feedback_list) {
+          setFeedbacks(data.data.feedback_list);
+        } else {
+          setFeedbacks([]);
+        }
+      })
+      .catch(() => setFeedbacks([]))
+      .finally(() => setLoading(false));
+  }, [submitted]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!userName.trim()) return toast.error("Please enter your name");
     if (!rating) return toast.error("Please select a rating");
     if (!comment.trim()) return toast.error("Please add a comment");
-    // API call placeholder
-    toast.success("Thank you for your feedback!");
-    setSubmitted(true);
+    try {
+      const res = await fetch("http://localhost:7777/vehiclealerts/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_name: userName,
+          rating,
+          message: comment,
+        }),
+      });
+      const data = await res.json();
+      if (data.successstatus) {
+        toast.success("Thank you for your feedback!");
+        setSubmitted(true);
+      } else {
+        toast.error(data.message || "Failed to submit feedback");
+      }
+    } catch (err) {
+      toast.error("Failed to submit feedback");
+    }
   };
 
   const StarRating = ({ value, onChange, onHover, size = "text-2xl" }) => (
@@ -128,6 +135,18 @@ const Feedback = () => {
                 <form onSubmit={handleSubmit} className="card p-6 space-y-5">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Your Name
+                    </label>
+                    <input
+                      type="text"
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                      className="input-field"
+                      placeholder="Enter your name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Your Rating
                     </label>
                     <StarRating
@@ -164,26 +183,33 @@ const Feedback = () => {
                 What Others Say
               </h2>
               <div className="space-y-4">
-                {feedbacks.map((fb) => (
-                  <div key={fb.id} className="card p-4">
-                    <div className="flex items-center gap-1 mb-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <FiStar
-                          key={star}
-                          className={`text-sm ${star <= fb.rating ? "text-amber-400" : "text-gray-300"}`}
-                          fill={star <= fb.rating ? "currentColor" : "none"}
-                        />
-                      ))}
-                      <span className="text-xs text-gray-400 ml-2">
-                        {fb.date}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600">{fb.comment}</p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      — Anonymous User
-                    </p>
+                {loading ? (
+                  <div className="text-center text-gray-400">
+                    Loading feedbacks...
                   </div>
-                ))}
+                ) : feedbacks.length === 0 ? (
+                  <div className="text-center text-gray-400">
+                    No feedbacks yet.
+                  </div>
+                ) : (
+                  feedbacks.map((fb, idx) => (
+                    <div key={idx} className="card p-4">
+                      <div className="flex items-center gap-1 mb-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <FiStar
+                            key={star}
+                            className={`text-sm ${star <= fb.rating ? "text-amber-400" : "text-gray-300"}`}
+                            fill={star <= fb.rating ? "currentColor" : "none"}
+                          />
+                        ))}
+                        <span className="text-xs text-gray-400 ml-2">
+                          {fb.user_name || "Anonymous"}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">{fb.message}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </motion.div>
           </div>
