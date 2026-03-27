@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
-import PolicyModal from "../components/PolicyModal";
-  const [policyModal, setPolicyModal] = useState({ open: false, type: "", title: "" });
 import { useLocation, useParams } from "react-router-dom";
-import { FiSend, FiAlertTriangle, FiChevronDown, FiCheckCircle, FiShield, FiExternalLink } from "react-icons/fi";
+import {
+  FiSend,
+  FiAlertTriangle,
+  FiChevronDown,
+  FiCheckCircle,
+  FiShield,
+  FiExternalLink,
+} from "react-icons/fi";
 import toast from "react-hot-toast";
 import {
   scanQRCode,
@@ -138,13 +143,12 @@ const ScanQRCode = () => {
   };
 
   const selectedConcern = data?.concern_messages_list?.find(
-    (c) => c.phrase === selected
+    (c) => c.phrase === selected,
   );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50">
       <div className="max-w-lg mx-auto px-4 py-8 sm:py-12">
-
         {/* ───── Header ───── */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-lg shadow-primary-200 mb-4">
@@ -153,13 +157,17 @@ const ScanQRCode = () => {
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-gray-900">
             Vehicle Alert System
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Scan result &amp; notify the vehicle owner</p>
+          <p className="text-gray-500 text-sm mt-1">
+            Scan result &amp; notify the vehicle owner
+          </p>
         </div>
 
         {/* ───── QR input (when no param) ───── */}
         {!qrcodeParam && (
           <div className="card p-5 mb-6">
-            <label className="block text-sm font-medium text-gray-600 mb-1">QR Code</label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              QR Code
+            </label>
             <input
               id="qrcode-input"
               value={qrcode}
@@ -174,7 +182,9 @@ const ScanQRCode = () => {
         {loading && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-            <p className="text-sm text-gray-500 animate-pulse">Checking QR code…</p>
+            <p className="text-sm text-gray-500 animate-pulse">
+              Checking QR code…
+            </p>
           </div>
         )}
 
@@ -191,7 +201,6 @@ const ScanQRCode = () => {
         {/* ───── Main content ───── */}
         {data && !loading && (
           <div className="space-y-5">
-
             {/* ── Vehicle Number Banner ── */}
             <div className="card overflow-visible border-2 border-primary-200 bg-gradient-to-r from-primary-50 to-indigo-50 p-5">
               <div className="flex items-start gap-3">
@@ -206,9 +215,11 @@ const ScanQRCode = () => {
                     {data.vehicle_number}
                   </p>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    Please <strong className="text-gray-800">cross check</strong> the vehicle.
-                    If it does not match, report using the{" "}
-                    <strong className="text-red-600">Report Misuse</strong> button below.
+                    Please{" "}
+                    <strong className="text-gray-800">cross check</strong> the
+                    vehicle. If it does not match, report using the{" "}
+                    <strong className="text-red-600">Report Misuse</strong>{" "}
+                    button below.
                   </p>
                   {data.is_subscriptionexpired && (
                     <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5 mt-3 inline-block">
@@ -309,45 +320,14 @@ const ScanQRCode = () => {
               </button>
             </div>
 
-            {/* ── Disclaimer and Policy Links ── */}
-            <div className="mt-4 text-xs text-gray-500 text-center">
-              By sending alert, you agree to responsible use of this service.<br />
-              <span>
-                Read our
-                <button
-                  type="button"
-                  className="underline hover:text-primary-600 mx-1"
-                  onClick={() => setPolicyModal({ open: true, type: "terms", title: "Terms & Conditions" })}
-                >
-                  Terms & Conditions
-                </button>
-                and
-                <button
-                  type="button"
-                  className="underline hover:text-primary-600 mx-1"
-                  onClick={() => setPolicyModal({ open: true, type: "privacy", title: "Privacy Policy" })}
-                >
-                  Privacy Policy
-                </button>
-                .
-              </span>
-            </div>
-
-            {/* Policy Modal */}
-            <PolicyModal
-              open={policyModal.open}
-              onClose={() => setPolicyModal({ ...policyModal, open: false })}
-              policyType={policyModal.type}
-              title={policyModal.title}
-            />
-            </div>
-
             {/* ── Sent confirmation ── */}
             {sent && data.submitResult && (
               <div className="card border-green-200 bg-green-50 p-5">
                 <div className="flex items-center gap-2 mb-1">
                   <FiCheckCircle className="w-5 h-5 text-green-600" />
-                  <p className="font-semibold text-green-800">Alert Sent Successfully!</p>
+                  <p className="font-semibold text-green-800">
+                    Alert Sent Successfully!
+                  </p>
                 </div>
                 <p className="text-sm text-green-700">
                   The vehicle owner has been notified about your concern.
@@ -404,8 +384,9 @@ const ScanQRCode = () => {
                 ServerPe App Solutions
               </p>
               <p className="text-primary-200 text-sm leading-relaxed mb-4">
-                Subscribe to <strong className="text-white">ServerPe</strong> and get instant vehicle
-                alerts, QR stickers &amp; much more for your vehicle.
+                Subscribe to <strong className="text-white">ServerPe</strong>{" "}
+                and get instant vehicle alerts, QR stickers &amp; much more for
+                your vehicle.
               </p>
               <a
                 href="https://www.serverpe.in"
@@ -423,7 +404,8 @@ const ScanQRCode = () => {
 
         {/* ───── Footer ───── */}
         <p className="text-center text-xs text-gray-400 mt-6">
-          © {new Date().getFullYear()} ServerPe App Solutions. All rights reserved.
+          © {new Date().getFullYear()} ServerPe App Solutions. All rights
+          reserved.
         </p>
       </div>
     </div>

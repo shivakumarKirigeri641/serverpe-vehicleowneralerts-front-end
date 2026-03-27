@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import PolicyModal from "../components/PolicyModal";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiArrowRight, FiShield, FiCheckCircle } from "react-icons/fi";
@@ -12,17 +11,9 @@ const Login = () => {
   const { login } = useAuth();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
-  // Policy modal state
-  const [policyModal, setPolicyModal] = useState({
-    open: false,
-    type: "",
-    title: "",
-  });
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [mobileNumber, setMobileNumber] = useState("9876543218");
   const [otp, setOtp] = useState("1234");
-  // Consent modal state
-  const [showConsent, setShowConsent] = useState(false);
-  const [consentChecked, setConsentChecked] = useState(false);
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -61,15 +52,9 @@ const Login = () => {
       const res = await verifyLoginOtp({ mobile_number: mobileNumber, otp });
       if (res.data?.successstatus) {
         toast.success("Login successful!");
-        // Check if consent is already accepted (simulate with localStorage)
-        const consentAccepted = localStorage.getItem("userConsentAccepted");
-        if (!consentAccepted) {
-          setShowConsent(true);
-        } else {
-          // Pass full verify OTP response as second parameter
-          login(res.data.data?.vehicle_owner_info?.[0], res.data.data);
-          navigate("/dashboard");
-        }
+        // Pass full verify OTP response as second parameter
+        login(res.data.data?.vehicle_owner_info?.[0], res.data.data);
+        navigate("/dashboard");
       } else {
         toast.error(res.data?.message || "Invalid OTP");
       }
@@ -79,119 +64,6 @@ const Login = () => {
       setSubmitting(false);
     }
   };
-
-  // Handle consent acceptance
-  const handleConsentAccept = () => {
-    localStorage.setItem("userConsentAccepted", "true");
-    setShowConsent(false);
-    setConsentChecked(false);
-    // Simulate login and redirect after consent
-    login({}, {}); // You may want to pass actual user info if needed
-    navigate("/dashboard");
-  };
-  {
-    /* Consent Modal for first login */
-  }
-  {
-    showConsent && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 flex flex-col">
-          <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b">
-            <h2 className="font-display text-lg font-bold text-blue-700">
-              User Consent
-            </h2>
-          </div>
-          <div className="overflow-y-auto px-6 py-4 max-h-96 text-gray-700 text-sm">
-            <div className="mb-4">
-              <strong>Summary:</strong>
-              <ul className="list-disc ml-5 mt-2 space-y-1">
-                <li>
-                  <button
-                    type="button"
-                    className="text-primary-600 underline"
-                    onClick={() =>
-                      setPolicyModal({
-                        open: true,
-                        type: "terms",
-                        title: "Terms & Conditions",
-                      })
-                    }
-                  >
-                    Terms & Conditions
-                  </button>{" "}
-                  apply to all users.
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    className="text-primary-600 underline"
-                    onClick={() =>
-                      setPolicyModal({
-                        open: true,
-                        type: "privacy",
-                        title: "Privacy Policy",
-                      })
-                    }
-                  >
-                    Privacy Policy
-                  </button>{" "}
-                  explains how your data is handled.
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    className="text-primary-600 underline"
-                    onClick={() =>
-                      setPolicyModal({
-                        open: true,
-                        type: "liability",
-                        title: "Liability Disclaimer",
-                      })
-                    }
-                  >
-                    Liability Disclaimer
-                  </button>{" "}
-                  clarifies our responsibilities.
-                </li>
-              </ul>
-            </div>
-            <div className="flex items-center gap-2 mt-4">
-              <input
-                type="checkbox"
-                id="consent-checkbox"
-                checked={consentChecked}
-                onChange={(e) => setConsentChecked(e.target.checked)}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <label
-                htmlFor="consent-checkbox"
-                className="text-sm text-gray-700"
-              >
-                I agree to all policies
-              </label>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 px-6 py-4 border-t">
-            <button
-              onClick={() => setShowConsent(false)}
-              className="btn-secondary px-4 py-2 text-sm"
-              type="button"
-            >
-              Close
-            </button>
-            <button
-              onClick={handleConsentAccept}
-              className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
-              type="button"
-              disabled={!consentChecked}
-            >
-              Continue
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center gradient-bg px-4 py-20">
@@ -259,46 +131,30 @@ const Login = () => {
                 anyone.
               </div>
 
-              {/* Policy agreement text, no checkbox */}
-              <div className="text-xs text-gray-500 text-center mt-2">
-                By continuing, you agree to our
-                <button
-                  type="button"
-                  className="text-primary-600 hover:underline ml-1 mr-1"
-                  onClick={() =>
-                    setPolicyModal({
-                      open: true,
-                      type: "terms",
-                      title: "Terms & Conditions",
-                    })
-                  }
-                >
-                  Terms & Conditions
-                </button>
-                and
-                <button
-                  type="button"
-                  className="text-primary-600 hover:underline ml-1"
-                  onClick={() =>
-                    setPolicyModal({
-                      open: true,
-                      type: "privacy",
-                      title: "Privacy Policy",
-                    })
-                  }
-                >
-                  Privacy Policy
-                </button>
-              </div>
-              {/* Policy Modal */}
-              <PolicyModal
-                open={policyModal.open}
-                onClose={() =>
-                  setPolicyModal({ open: false, type: "", title: "" })
-                }
-                policyType={policyModal.type}
-                title={policyModal.title}
-              />
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreeTerms}
+                  onChange={(e) => setAgreeTerms(e.target.checked)}
+                  className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="text-sm text-gray-600">
+                  I agree to the{" "}
+                  <Link
+                    to="/terms"
+                    className="text-primary-600 hover:underline"
+                  >
+                    Terms & Conditions
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    to="/privacy"
+                    className="text-primary-600 hover:underline"
+                  >
+                    Privacy Policy
+                  </Link>
+                </span>
+              </label>
 
               <button
                 type="submit"

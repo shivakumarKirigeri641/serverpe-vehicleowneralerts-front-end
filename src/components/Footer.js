@@ -1,15 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { FiShield, FiMail } from "react-icons/fi";
+import { FiShield, FiMail, FiPhone, FiMapPin } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
-import PolicyModal from "./PolicyModal";
 
 const Footer = () => {
-  const [policyModal, setPolicyModal] = useState({
-    open: false,
-    type: "",
-    title: "",
-  });
   return (
     <footer className="bg-gray-900 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -103,66 +97,56 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Legal (Policy Modals) */}
+          {/* Legal */}
           <div>
             <h4 className="font-display font-semibold text-white mb-4">
               Legal
             </h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <button
-                  className="hover:text-primary-400 transition-colors underline bg-transparent p-0 border-0"
-                  onClick={() =>
-                    setPolicyModal({
-                      open: true,
-                      type: "privacy",
-                      title: "Privacy Policy",
-                    })
-                  }
+                <Link
+                  to="/privacy"
+                  className="hover:text-primary-400 transition-colors"
                 >
                   Privacy Policy
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  className="hover:text-primary-400 transition-colors underline bg-transparent p-0 border-0"
-                  onClick={() =>
-                    setPolicyModal({
-                      open: true,
-                      type: "terms",
-                      title: "Terms & Conditions",
-                    })
-                  }
+                <Link
+                  to="/terms"
+                  className="hover:text-primary-400 transition-colors"
                 >
                   Terms & Conditions
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  className="hover:text-primary-400 transition-colors underline bg-transparent p-0 border-0"
-                  onClick={() =>
-                    setPolicyModal({
-                      open: true,
-                      type: "refund",
-                      title: "Refund Policy",
-                    })
-                  }
+                <Link
+                  to="/refund-policy"
+                  className="hover:text-primary-400 transition-colors"
                 >
                   Refund Policy
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
 
-          {/* Contact (Email only for privacy) */}
+          {/* Contact */}
           <div>
             <h4 className="font-display font-semibold text-white mb-4">
               Contact
             </h4>
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2">
+                <FiPhone className="text-primary-400 shrink-0" />
+                <span>+91 7996083415</span>
+              </li>
+              <li className="flex items-center gap-2">
                 <FiMail className="text-primary-400 shrink-0" />
                 <span>support@serverpe.in</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <FiMapPin className="text-primary-400 shrink-0 mt-0.5" />
+                <span>India</span>
               </li>
             </ul>
           </div>
@@ -176,14 +160,6 @@ const Footer = () => {
           </p>
           <p>Made with ❤️ by Shivakumar Kirigeri</p>
         </div>
-
-        {/* Policy Modal */}
-        <PolicyModal
-          open={policyModal.open}
-          onClose={() => setPolicyModal({ ...policyModal, open: false })}
-          policyType={policyModal.type}
-          title={policyModal.title}
-        />
       </div>
     </footer>
   );
