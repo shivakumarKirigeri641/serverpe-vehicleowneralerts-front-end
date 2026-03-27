@@ -62,6 +62,8 @@ export const sendLoginOtp = (data) =>
 export const verifyLoginOtp = (data) =>
   api.post("/vehicleowner/login/verify-otp", data);
 
+export const verifySubscriptionOtp = (data) =>
+  api.post("/vehicleowner/subscription/verify-otp", data);
 // Vehicle Owner Protected
 export const vehicleOwnerLogout = () =>
   api.post("/vehicleowner/credentials/logout");

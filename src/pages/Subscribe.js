@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiArrowRight, FiShield, FiCheckCircle } from "react-icons/fi";
 import toast from "react-hot-toast";
-import { sendSubscriptionOtp, verifyLoginOtp } from "../services/api";
+import { sendSubscriptionOtp, verifySubscriptionOtp } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
 const Subscribe = () => {
@@ -30,6 +30,7 @@ const Subscribe = () => {
     setSubmitting(true);
     try {
       const res = await sendSubscriptionOtp({
+        vehicle_owner_name: form.vehicle_owner_name.trim(),
         mobile_number: form.mobile_number,
       });
       if (res.data?.successstatus) {
@@ -56,7 +57,8 @@ const Subscribe = () => {
 
     setSubmitting(true);
     try {
-      const res = await verifyLoginOtp({
+      const res = await verifySubscriptionOtp({
+        vehicle_owner_name: form.vehicle_owner_name.trim(),
         mobile_number: form.mobile_number,
         otp,
       });
