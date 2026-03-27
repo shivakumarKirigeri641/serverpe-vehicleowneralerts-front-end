@@ -43,21 +43,6 @@ const Plans = () => {
       label: "Instant Notifications",
       bool: true,
     },
-    {
-      key: "location_link_in_alert",
-      label: "Location Link in Alert",
-      bool: true,
-    },
-    {
-      key: "multiple_contact_numbers",
-      label: "Contact Numbers",
-      format: (v) => `Up to ${v}`,
-    },
-    {
-      key: "vehicles_count",
-      label: "Vehicles",
-      format: (v) => `${v} Vehicle${v > 1 ? "s" : ""}`,
-    },
     { key: "usage_limits", label: "Usage", format: (v) => v },
     {
       key: "cooldown_minutes",

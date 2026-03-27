@@ -108,31 +108,14 @@ const DashboardPlans = () => {
                 </span>
               </li>
               <li className="flex items-center gap-2">
-                {plan.location_link_in_alert ? (
-                  <FiMapPin className="text-green-500 shrink-0" />
-                ) : (
-                  <FiX className="text-gray-300 shrink-0" />
-                )}
-                <span
-                  className={
-                    !plan.location_link_in_alert ? "text-gray-400" : ""
-                  }
-                >
-                  Location in Alert
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                <FiStar className="text-green-500 shrink-0" />{" "}
-                {plan.multiple_contact_numbers} Contact Number
-                {plan.multiple_contact_numbers > 1 ? "s" : ""}
-              </li>
-              <li className="flex items-center gap-2">
                 {plan.is_weekly_summary ? (
                   <FiCalendar className="text-green-500 shrink-0" />
                 ) : (
                   <FiX className="text-gray-300 shrink-0" />
                 )}
-                <span className={!plan.is_weekly_summary ? "text-gray-400" : ""}>
+                <span
+                  className={!plan.is_weekly_summary ? "text-gray-400" : ""}
+                >
                   Weekly Summary Report
                   {plan.is_weekly_summary && (
                     <span className="ml-1 text-xs text-green-600 font-medium">
@@ -147,7 +130,9 @@ const DashboardPlans = () => {
                 ) : (
                   <FiX className="text-gray-300 shrink-0" />
                 )}
-                <span className={!plan.is_monthly_summary ? "text-gray-400" : ""}>
+                <span
+                  className={!plan.is_monthly_summary ? "text-gray-400" : ""}
+                >
                   Monthly Summary Report
                   {plan.is_monthly_summary && (
                     <span className="ml-1 text-xs text-green-600 font-medium">
@@ -169,6 +154,46 @@ const DashboardPlans = () => {
               {plan.comparable_price === 0 ? "Current Plan" : "Choose Plan"}{" "}
               <FiArrowRight className="ml-2" />
             </button>
+
+            {/* Highlight for premium plans with summaries */}
+            {(plan.is_weekly_summary || plan.is_monthly_summary) && (
+              <div className="mt-4 p-3 rounded bg-green-50 border border-green-200 text-green-800 text-xs text-center">
+                {plan.is_weekly_summary && plan.is_monthly_summary ? (
+                  <>
+                    <strong>WhatsApp Summaries:</strong> You will receive a{" "}
+                    <b>Weekly</b> summary every weekend and a <b>Monthly</b>{" "}
+                    summary at every month-end on WhatsApp.
+                  </>
+                ) : plan.is_weekly_summary ? (
+                  <>
+                    <strong>WhatsApp Summary:</strong> You will receive a{" "}
+                    <b>Weekly</b> summary every weekend on WhatsApp.
+                  </>
+                ) : (
+                  <>
+                    <strong>WhatsApp Summary:</strong> You will receive a{" "}
+                    <b>Monthly</b> summary at every month-end on WhatsApp.
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Plan-specific info section */}
+            <div className="mt-4 p-3 rounded bg-blue-50 border border-blue-200 text-blue-800 text-xs text-center">
+              {plan.price === 0 ? (
+                <>This plan is to try how the alert comes.</>
+              ) : plan.whatsapp_alerts ? (
+                <>
+                  For vehicle owners who are ok with both SMS & WhatsApp alerts.
+                  Best for heavy users, especially auto & cab drivers.
+                </>
+              ) : (
+                <>
+                  For vehicle owners who are ok with SMS alerts (private
+                  vehicles).
+                </>
+              )}
+            </div>
           </motion.div>
         ))}
       </div>
