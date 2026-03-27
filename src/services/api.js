@@ -47,6 +47,10 @@ export const reportMisuse = (qrcodeNumber) =>
 export const checkSubscriptionStatus = (vehicleNumber) =>
   api.get(`/vehiclealerts/check-subscription-status/${vehicleNumber}`);
 
+// Leave message for vehicle owner when scanner can't contact owner
+export const leaveMessageToVehicleOwner = (payload) =>
+  api.post("/vehiclealerts/scan/leave-message-to-vehicle-owner", payload);
+
 // Vehicle Owner Auth
 export const sendSubscriptionOtp = (data) =>
   api.post("/vehicleowner/subscription/send-otp", data);
