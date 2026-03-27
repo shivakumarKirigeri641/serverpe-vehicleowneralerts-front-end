@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import PolicyModal from "../components/PolicyModal";
+  const [policyModal, setPolicyModal] = useState({ open: false, type: "", title: "" });
 import { useLocation, useParams } from "react-router-dom";
 import { FiSend, FiAlertTriangle, FiChevronDown, FiCheckCircle, FiShield, FiExternalLink } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -305,6 +307,39 @@ const ScanQRCode = () => {
               >
                 <FiAlertTriangle className="w-5 h-5" /> Report Misuse
               </button>
+            </div>
+
+            {/* ── Disclaimer and Policy Links ── */}
+            <div className="mt-4 text-xs text-gray-500 text-center">
+              By sending alert, you agree to responsible use of this service.<br />
+              <span>
+                Read our
+                <button
+                  type="button"
+                  className="underline hover:text-primary-600 mx-1"
+                  onClick={() => setPolicyModal({ open: true, type: "terms", title: "Terms & Conditions" })}
+                >
+                  Terms & Conditions
+                </button>
+                and
+                <button
+                  type="button"
+                  className="underline hover:text-primary-600 mx-1"
+                  onClick={() => setPolicyModal({ open: true, type: "privacy", title: "Privacy Policy" })}
+                >
+                  Privacy Policy
+                </button>
+                .
+              </span>
+            </div>
+
+            {/* Policy Modal */}
+            <PolicyModal
+              open={policyModal.open}
+              onClose={() => setPolicyModal({ ...policyModal, open: false })}
+              policyType={policyModal.type}
+              title={policyModal.title}
+            />
             </div>
 
             {/* ── Sent confirmation ── */}

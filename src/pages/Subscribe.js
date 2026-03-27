@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import PolicyModal from "../components/PolicyModal";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiArrowRight, FiShield, FiCheckCircle } from "react-icons/fi";
@@ -12,6 +13,11 @@ const Subscribe = () => {
   const [step, setStep] = useState(1); // 1: form, 2: otp
   const [submitting, setSubmitting] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [policyModal, setPolicyModal] = useState({
+    open: false,
+    type: "",
+    title: "",
+  });
   const [form, setForm] = useState({
     vehicle_owner_name: "",
     mobile_number: "",
@@ -175,27 +181,69 @@ const Subscribe = () => {
                   onChange={(e) => setAgreeTerms(e.target.checked)}
                   className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
-                <span className="text-sm text-gray-600">
-                  I agree to the{" "}
-                  <Link
-                    to="/terms"
+                <span className="text-sm text-gray-600 flex flex-wrap items-center gap-1">
+                  I agree to
+                  <button
+                    type="button"
                     className="text-primary-600 hover:underline"
+                    onClick={() =>
+                      setPolicyModal({
+                        open: true,
+                        type: "terms",
+                        title: "Terms & Conditions",
+                      })
+                    }
                   >
-                    Terms & Conditions
-                  </Link>{" "}
-                  and{" "}
-                  <Link
-                    to="/privacy"
+                    Terms
+                  </button>
+                  ,
+                  <button
+                    type="button"
                     className="text-primary-600 hover:underline"
+                    onClick={() =>
+                      setPolicyModal({
+                        open: true,
+                        type: "privacy",
+                        title: "Privacy Policy",
+                      })
+                    }
                   >
                     Privacy Policy
-                  </Link>
+                  </button>
+                  ,
+                  <button
+                    type="button"
+                    className="text-primary-600 hover:underline"
+                    onClick={() =>
+                      setPolicyModal({
+                        open: true,
+                        type: "payment",
+                        title: "Payment Policy",
+                      })
+                    }
+                  >
+                    Payment Policy
+                  </button>
+                  &
+                  <button
+                    type="button"
+                    className="text-primary-600 hover:underline"
+                    onClick={() =>
+                      setPolicyModal({
+                        open: true,
+                        type: "refund",
+                        title: "Refund Policy",
+                      })
+                    }
+                  >
+                    Refund Policy
+                  </button>
                 </span>
               </label>
 
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !agreeTerms}
                 className="btn-accent w-full gap-2 disabled:opacity-50"
               >
                 {submitting ? (
@@ -206,6 +254,18 @@ const Subscribe = () => {
                   </>
                 )}
               </button>
+              <div className="text-xs text-center text-amber-600 mt-2">
+                All payments are non-refundable
+              </div>
+              {/* Policy Modal */}
+              <PolicyModal
+                open={policyModal.open}
+                onClose={() =>
+                  setPolicyModal({ open: false, type: "", title: "" })
+                }
+                policyType={policyModal.type}
+                title={policyModal.title}
+              />
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-5">

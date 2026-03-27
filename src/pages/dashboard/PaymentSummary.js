@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import PolicyModal from "../../components/PolicyModal";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -48,6 +49,12 @@ const PaymentSummary = () => {
   // Address form state
   const [address, setAddress] = useState(INITIAL_ADDRESS);
   const [addressErrors, setAddressErrors] = useState({});
+  // Policy modal state
+  const [policyModal, setPolicyModal] = useState({
+    open: false,
+    type: "",
+    title: "",
+  });
 
   const planId = new URLSearchParams(location.search).get("planId");
 
@@ -297,7 +304,12 @@ const PaymentSummary = () => {
 
   // Helper: render a form input field
   const renderField = (label, field, placeholder, options = {}) => {
-    const { required = true, type = "text", maxLength, colSpan2 = false } = options;
+    const {
+      required = true,
+      type = "text",
+      maxLength,
+      colSpan2 = false,
+    } = options;
     return (
       <div className={colSpan2 ? "sm:col-span-2" : ""}>
         <label
@@ -430,7 +442,8 @@ const PaymentSummary = () => {
               </h3>
             </div>
             <p className="text-xs text-gray-400 mb-5">
-              QR sticker will be delivered to this address after successful payment.
+              QR sticker will be delivered to this address after successful
+              payment.
             </p>
 
             <div className="grid sm:grid-cols-2 gap-x-4 gap-y-4">
@@ -498,7 +511,9 @@ const PaymentSummary = () => {
                   <select
                     id="addr-stateUnion"
                     value={address.stateUnion}
-                    onChange={(e) => updateAddress("stateUnion", e.target.value)}
+                    onChange={(e) =>
+                      updateAddress("stateUnion", e.target.value)
+                    }
                     className={`input-field w-full text-sm appearance-none pr-10 cursor-pointer ${
                       addressErrors.stateUnion
                         ? "!border-red-400 !ring-red-200 focus:!ring-red-300 focus:!border-red-400"
@@ -695,6 +710,38 @@ const PaymentSummary = () => {
             </div>
           )}
 
+          {/* Policy agreement before Pay Now */}
+          <div className="text-xs text-gray-600 text-center mb-3">
+            By proceeding, you agree to our
+            <button
+              type="button"
+              className="text-primary-600 hover:underline ml-1 mr-1"
+              onClick={() =>
+                setPolicyModal({
+                  open: true,
+                  type: "payment",
+                  title: "Payment Policy",
+                })
+              }
+            >
+              Payment
+            </button>
+            &
+            <button
+              type="button"
+              className="text-primary-600 hover:underline ml-1"
+              onClick={() =>
+                setPolicyModal({
+                  open: true,
+                  type: "refund",
+                  title: "Refund Policy",
+                })
+              }
+            >
+              Refund Policy
+            </button>
+          </div>
+
           <button
             onClick={handlePayNow}
             disabled={processing}
@@ -713,6 +760,14 @@ const PaymentSummary = () => {
           <p className="text-xs text-gray-400 text-center mt-4">
             Secure payment powered by Razorpay
           </p>
+
+          {/* Policy Modal */}
+          <PolicyModal
+            open={policyModal.open}
+            onClose={() => setPolicyModal({ open: false, type: "", title: "" })}
+            policyType={policyModal.type}
+            title={policyModal.title}
+          />
         </motion.div>
       </motion.div>
     </div>

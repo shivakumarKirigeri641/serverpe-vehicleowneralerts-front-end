@@ -1,7 +1,5 @@
 import axios from "axios";
-
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:7777";
-
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
@@ -30,8 +28,10 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
-
 // Public APIs
+// Policy APIs
+export const getPolicy = (policyType) =>
+  api.get(`/vehiclealerts/policies/${policyType}`);
 export const getSubscriptionPlans = () =>
   api.get("/vehiclealerts/subscription-plans");
 export const getQueryTypes = () => api.get("/vehiclealerts/query-type");
@@ -48,8 +48,7 @@ export const checkSubscriptionStatus = (vehicleNumber) =>
   api.get(`/vehiclealerts/check-subscription-status/${vehicleNumber}`);
 
 // Fetch Indian states / union territories
-export const getStatesUnions = () =>
-  api.get("/vehiclealerts/states-unions");
+export const getStatesUnions = () => api.get("/vehiclealerts/states-unions");
 
 // Leave message for vehicle owner when scanner can't contact owner
 export const leaveMessageToVehicleOwner = (payload) =>
