@@ -7,6 +7,7 @@ import {
   FiStar,
   FiMapPin,
   FiArrowRight,
+  FiMessageSquare,
 } from "react-icons/fi";
 import { getSubscriptionPlans } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -62,6 +63,16 @@ const Plans = () => {
       key: "cooldown_minutes",
       label: "Cooldown",
       format: (v) => `${v} min between alerts`,
+    },
+    {
+      key: "is_weekly_summary",
+      label: "Weekly Summary Report (WhatsApp)",
+      bool: true,
+    },
+    {
+      key: "is_monthly_summary",
+      label: "Monthly Summary Report (WhatsApp)",
+      bool: true,
     },
   ];
 

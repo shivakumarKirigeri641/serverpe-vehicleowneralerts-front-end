@@ -6,6 +6,8 @@ import {
   FiCheckCircle,
   FiLoader,
   FiAlertCircle,
+  FiMapPin,
+  FiChevronDown,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
@@ -13,9 +15,24 @@ import {
   getSubscriptionPlans,
   createPaymentOrder,
   verifyPayment,
+  getStatesUnions,
 } from "../../services/api";
 
 const GST_RATE = 0.18; // 18% GST in India
+
+const INITIAL_ADDRESS = {
+  ownerName: "",
+  mobileNumber: "",
+  flatHouseNo: "",
+  addressLine1: "",
+  addressLine2: "",
+  landmark: "",
+  city: "",
+  district: "",
+  stateUnion: "",
+  pincode: "",
+  mapsLink: "",
+};
 
 const PaymentSummary = () => {
   const navigate = useNavigate();
@@ -25,9 +42,27 @@ const PaymentSummary = () => {
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [statesUnions, setStatesUnions] = useState([]);
+  const [statesLoading, setStatesLoading] = useState(true);
+
+  // Address form state
+  const [address, setAddress] = useState(INITIAL_ADDRESS);
+  const [addressErrors, setAddressErrors] = useState({});
 
   const planId = new URLSearchParams(location.search).get("planId");
 
+  // Pre-fill name and mobile from owner context
+  useEffect(() => {
+    if (owner) {
+      setAddress((prev) => ({
+        ...prev,
+        ownerName: prev.ownerName || owner.vehicle_owner_name || "",
+        mobileNumber: prev.mobileNumber || owner.mobile_number || "",
+      }));
+    }
+  }, [owner]);
+
+  // Fetch plan details
   useEffect(() => {
     const fetchPlans = async () => {
       try {
@@ -55,8 +90,90 @@ const PaymentSummary = () => {
     fetchPlans();
   }, [planId, navigate]);
 
+  // Fetch states/union territories
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const res = await getStatesUnions();
+        if (res.data?.successstatus) {
+          setStatesUnions(res.data.data || []);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch states:", err?.message);
+      } finally {
+        setStatesLoading(false);
+      }
+    };
+    fetchStates();
+  }, []);
+
+  // Update address field
+  const updateAddress = (field, value) => {
+    setAddress((prev) => ({ ...prev, [field]: value }));
+    // Clear error when user types
+    if (addressErrors[field]) {
+      setAddressErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  // Validate address
+  const validateAddress = () => {
+    const errors = {};
+    const required = [
+      { key: "ownerName", label: "Vehicle owner name" },
+      { key: "mobileNumber", label: "Mobile number" },
+      { key: "flatHouseNo", label: "Flat/House no" },
+      { key: "addressLine1", label: "Address line 1" },
+      { key: "city", label: "City" },
+      { key: "district", label: "District" },
+      { key: "stateUnion", label: "State/Union territory" },
+      { key: "pincode", label: "Pincode" },
+    ];
+
+    required.forEach(({ key, label }) => {
+      if (!address[key]?.trim()) {
+        errors[key] = `${label} is required`;
+      }
+    });
+
+    // Validate mobile number format
+    if (address.mobileNumber && !/^\d{10}$/.test(address.mobileNumber.trim())) {
+      errors.mobileNumber = "Enter a valid 10-digit mobile number";
+    }
+
+    // Validate pincode
+    if (address.pincode && !/^\d{6}$/.test(address.pincode.trim())) {
+      errors.pincode = "Enter a valid 6-digit pincode";
+    }
+
+    // Validate maps link if provided
+    if (
+      address.mapsLink.trim() &&
+      !/^https?:\/\//i.test(address.mapsLink.trim())
+    ) {
+      errors.mapsLink = "Enter a valid URL starting with http:// or https://";
+    }
+
+    setAddressErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handlePayNow = async () => {
     if (!plan || !owner) return;
+
+    // Validate address first
+    if (!validateAddress()) {
+      toast.error("Please fill in all required delivery address fields");
+      // Scroll to the address section
+      document
+        .getElementById("delivery-address-section")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
 
     setProcessing(true);
     try {
@@ -94,6 +211,7 @@ const PaymentSummary = () => {
               vehicle_number: owner.vehicle_number,
               subscription_plan_id: plan.rpid,
               amount: total,
+              delivery_address: address,
             });
 
             if (verifyRes.data?.successstatus) {
@@ -119,9 +237,9 @@ const PaymentSummary = () => {
           }
         },
         prefill: {
-          name: owner.vehicle_owner_name || "",
+          name: address.ownerName || owner.vehicle_owner_name || "",
           email: owner.email || "",
-          contact: owner.mobile_number || "",
+          contact: address.mobileNumber || owner.mobile_number || "",
         },
         theme: {
           color: "#4f46e5", // indigo primary color
@@ -176,6 +294,41 @@ const PaymentSummary = () => {
   const baseAmount = parseFloat(plan.price) || 0;
   const gstAmount = calculateGST(baseAmount);
   const totalAmount = baseAmount + gstAmount;
+
+  // Helper: render a form input field
+  const renderField = (label, field, placeholder, options = {}) => {
+    const { required = true, type = "text", maxLength, colSpan2 = false } = options;
+    return (
+      <div className={colSpan2 ? "sm:col-span-2" : ""}>
+        <label
+          htmlFor={`addr-${field}`}
+          className="block text-xs font-medium text-gray-600 mb-1.5"
+        >
+          {label}
+          {required && <span className="text-red-400 ml-0.5">*</span>}
+          {!required && (
+            <span className="text-gray-400 ml-1 font-normal">(Optional)</span>
+          )}
+        </label>
+        <input
+          id={`addr-${field}`}
+          type={type}
+          maxLength={maxLength}
+          value={address[field]}
+          onChange={(e) => updateAddress(field, e.target.value)}
+          placeholder={placeholder}
+          className={`input-field w-full text-sm ${
+            addressErrors[field]
+              ? "!border-red-400 !ring-red-200 focus:!ring-red-300 focus:!border-red-400"
+              : ""
+          }`}
+        />
+        {addressErrors[field] && (
+          <p className="text-xs text-red-500 mt-1">{addressErrors[field]}</p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -260,6 +413,157 @@ const PaymentSummary = () => {
             </div>
           </motion.div>
 
+          {/* ────────────────────────────────────────────────────────────── */}
+          {/*  Delivery Address Section                                     */}
+          {/* ────────────────────────────────────────────────────────────── */}
+          <motion.div
+            id="delivery-address-section"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="card p-6"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <FiMapPin className="text-primary-500" />
+              <h3 className="font-display font-semibold text-lg text-gray-800">
+                Delivery Address
+              </h3>
+            </div>
+            <p className="text-xs text-gray-400 mb-5">
+              QR sticker will be delivered to this address after successful payment.
+            </p>
+
+            <div className="grid sm:grid-cols-2 gap-x-4 gap-y-4">
+              {/* Owner name */}
+              {renderField(
+                "Vehicle Owner Name",
+                "ownerName",
+                "Full name as on QR sticker",
+              )}
+
+              {/* Mobile for delivery */}
+              {renderField(
+                "Mobile Number",
+                "mobileNumber",
+                "10-digit mobile number",
+                { type: "tel", maxLength: 10 },
+              )}
+
+              {/* Flat / House No */}
+              {renderField(
+                "Flat / House No.",
+                "flatHouseNo",
+                "e.g., Flat 204, 2nd Floor",
+              )}
+
+              {/* Address Line 1 */}
+              {renderField(
+                "Address Line 1",
+                "addressLine1",
+                "Building name, Street / Road",
+              )}
+
+              {/* Address Line 2 */}
+              {renderField(
+                "Address Line 2",
+                "addressLine2",
+                "Area, Colony (if any)",
+                { required: false },
+              )}
+
+              {/* Landmark */}
+              {renderField(
+                "Landmark",
+                "landmark",
+                "Near temple, school, etc.",
+                { required: false },
+              )}
+
+              {/* City */}
+              {renderField("City / Town", "city", "e.g., Bengaluru")}
+
+              {/* District */}
+              {renderField("District", "district", "e.g., Bangalore Urban")}
+
+              {/* State / Union Territory — dropdown */}
+              <div>
+                <label
+                  htmlFor="addr-stateUnion"
+                  className="block text-xs font-medium text-gray-600 mb-1.5"
+                >
+                  State / Union Territory
+                  <span className="text-red-400 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    id="addr-stateUnion"
+                    value={address.stateUnion}
+                    onChange={(e) => updateAddress("stateUnion", e.target.value)}
+                    className={`input-field w-full text-sm appearance-none pr-10 cursor-pointer ${
+                      addressErrors.stateUnion
+                        ? "!border-red-400 !ring-red-200 focus:!ring-red-300 focus:!border-red-400"
+                        : ""
+                    } ${!address.stateUnion ? "text-gray-400" : "text-gray-800"}`}
+                  >
+                    <option value="" disabled>
+                      {statesLoading ? "Loading…" : "— Select state —"}
+                    </option>
+                    {statesUnions.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name} ({s.type})
+                      </option>
+                    ))}
+                  </select>
+                  <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+                {addressErrors.stateUnion && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {addressErrors.stateUnion}
+                  </p>
+                )}
+              </div>
+
+              {/* Pincode */}
+              {renderField("Pincode", "pincode", "6-digit pincode", {
+                type: "text",
+                maxLength: 6,
+              })}
+
+              {/* Google Maps link – optional, full width */}
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="addr-mapsLink"
+                  className="block text-xs font-medium text-gray-600 mb-1.5"
+                >
+                  Google Maps Location Link
+                  <span className="text-gray-400 ml-1 font-normal">
+                    (Optional)
+                  </span>
+                </label>
+                <input
+                  id="addr-mapsLink"
+                  type="url"
+                  value={address.mapsLink}
+                  onChange={(e) => updateAddress("mapsLink", e.target.value)}
+                  placeholder="https://maps.google.com/..."
+                  className={`input-field w-full text-sm ${
+                    addressErrors.mapsLink
+                      ? "!border-red-400 !ring-red-200 focus:!ring-red-300 focus:!border-red-400"
+                      : ""
+                  }`}
+                />
+                {addressErrors.mapsLink && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {addressErrors.mapsLink}
+                  </p>
+                )}
+                <p className="text-xs text-gray-400 mt-1">
+                  Share your location via Google Maps for accurate delivery.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
           {/* Plan Selection */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -322,6 +626,10 @@ const PaymentSummary = () => {
               ✓ You can download the invoice immediately after successful
               payment.
             </p>
+            <p className="mt-2">
+              ✓ QR sticker will be dispatched to the delivery address provided
+              above.
+            </p>
             <p className="mt-2 font-medium text-amber-900">
               Note: Renewing a plan will overwrite your current subscription.
               Please ensure you intend to replace the existing plan before
@@ -366,6 +674,26 @@ const PaymentSummary = () => {
               </span>
             </div>
           </div>
+
+          {/* Delivery address mini-preview */}
+          {address.flatHouseNo && address.city && (
+            <div className="bg-gray-50 rounded-xl p-3 mb-4 text-xs text-gray-600">
+              <p className="font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <FiMapPin className="w-3 h-3" /> Delivering to
+              </p>
+              <p>
+                {address.ownerName && <>{address.ownerName}, </>}
+                {address.flatHouseNo}, {address.addressLine1}
+                {address.addressLine2 && `, ${address.addressLine2}`}
+              </p>
+              <p>
+                {address.city}
+                {address.district && `, ${address.district}`}
+                {address.stateUnion && ` - ${address.stateUnion}`}
+                {address.pincode && ` ${address.pincode}`}
+              </p>
+            </div>
+          )}
 
           <button
             onClick={handlePayNow}

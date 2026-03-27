@@ -7,6 +7,7 @@ import {
   FiStar,
   FiMapPin,
   FiArrowRight,
+  FiCalendar,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { getSubscriptionPlans } from "../../services/api";
@@ -124,6 +125,36 @@ const DashboardPlans = () => {
                 <FiStar className="text-green-500 shrink-0" />{" "}
                 {plan.multiple_contact_numbers} Contact Number
                 {plan.multiple_contact_numbers > 1 ? "s" : ""}
+              </li>
+              <li className="flex items-center gap-2">
+                {plan.is_weekly_summary ? (
+                  <FiCalendar className="text-green-500 shrink-0" />
+                ) : (
+                  <FiX className="text-gray-300 shrink-0" />
+                )}
+                <span className={!plan.is_weekly_summary ? "text-gray-400" : ""}>
+                  Weekly Summary Report
+                  {plan.is_weekly_summary && (
+                    <span className="ml-1 text-xs text-green-600 font-medium">
+                      (WhatsApp · Every weekend)
+                    </span>
+                  )}
+                </span>
+              </li>
+              <li className="flex items-center gap-2">
+                {plan.is_monthly_summary ? (
+                  <FiCalendar className="text-green-500 shrink-0" />
+                ) : (
+                  <FiX className="text-gray-300 shrink-0" />
+                )}
+                <span className={!plan.is_monthly_summary ? "text-gray-400" : ""}>
+                  Monthly Summary Report
+                  {plan.is_monthly_summary && (
+                    <span className="ml-1 text-xs text-green-600 font-medium">
+                      (WhatsApp · Every month-end)
+                    </span>
+                  )}
+                </span>
               </li>
             </ul>
 

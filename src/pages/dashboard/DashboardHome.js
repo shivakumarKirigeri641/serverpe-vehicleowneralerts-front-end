@@ -10,6 +10,7 @@ import {
   FiUser,
   FiClock,
   FiX,
+  FiCalendar,
 } from "react-icons/fi";
 import { HiOutlineQrCode } from "react-icons/hi2";
 import toast from "react-hot-toast";
@@ -35,23 +36,40 @@ const DashboardHome = () => {
     loading: false,
     message: null,
     active: null,
+    data: null,
   });
 
-  // Extract data from owner context (from verify-otp response)
+  // Extract data from owner context (from verify-otp / dashboard response)
   const qrCodes = owner?.qrCodeInfo || [];
   const rawPlans = owner?.subscriptionPlans || [];
-  console.log("rawplans:", rawPlans);
+
   // Deduplicate subscription plans by vosid
   const subscriptionPlans = rawPlans.filter(
     (plan, index, self) =>
       index === self.findIndex((p) => p.vosid === plan.vosid),
   );
-  const hasActiveSubscription = subscriptionPlans.some(
-    (s) => new Date(s.effective_until) >= new Date(),
-  );
-  const activePlan = subscriptionPlans.find(
-    (s) => new Date(s.effective_until) >= new Date(),
-  );
+
+  // Determine the latest plan (may be active OR expired)
+  const latestPlan = subscriptionPlans.length > 0 ? subscriptionPlans[0] : null;
+  const isLatestPlanActive = latestPlan
+    ? new Date(latestPlan.effective_until) >= new Date()
+    : false;
+
+  // For backward compat — use the latest plan if active, null otherwise
+  const activePlan = isLatestPlanActive ? latestPlan : null;
+
+  const hasActiveSubscription = isLatestPlanActive;
+
+  // Helper: how many days until expiry (negative = days ago)
+  const getDaysUntilExpiry = (dateStr) => {
+    if (!dateStr) return null;
+    const diff = new Date(dateStr) - new Date();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const daysUntilExpiry = latestPlan
+    ? getDaysUntilExpiry(latestPlan.effective_until)
+    : null;
 
   useEffect(() => {
     const fetchScans = async () => {
@@ -72,13 +90,12 @@ const DashboardHome = () => {
       // refresh owner/dashboard data on mount
       if (typeof refreshOwner === "function") await refreshOwner();
 
-      // attempt to fetch the QR image for quick testing if available
+      // attempt to fetch the QR image
       try {
         const imgRes = await getQRCodeImage();
         if (imgRes && imgRes.data) {
           const blob = imgRes.data;
           const url = window.URL.createObjectURL(blob);
-          // revoke previous URL if any
           if (qrImageUrl) {
             try {
               window.URL.revokeObjectURL(qrImageUrl);
@@ -87,10 +104,10 @@ const DashboardHome = () => {
           setQrImageUrl(url);
         }
       } catch (err) {
-        // non-fatal — some users may not have an image yet
         console.warn("QR image fetch on mount failed:", err?.message || err);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // cleanup object URL on unmount / when url changes
@@ -112,18 +129,26 @@ const DashboardHome = () => {
     let mounted = true;
     (async () => {
       try {
-        setSubscriptionCheck({ loading: true, message: null, active: null });
+        setSubscriptionCheck({ loading: true, message: null, active: null, data: null });
         const res = await checkSubscriptionStatus(vehicleNumber);
         if (!mounted) return;
         const msg = res.data?.message || "Status unavailable";
-        const active = Boolean(res.data?.successstatus && /active/i.test(msg));
-        setSubscriptionCheck({ loading: false, message: msg, active });
+        const subData = res.data?.data?.subscription_status_details || null;
+
+        // Determine active status from the API response:
+        // The API returns specific messages for expired/exhausted vs active
+        const isExpiredMsg = /expired/i.test(msg) || /exhausted/i.test(msg);
+        const isActiveMsg = /active/i.test(msg) && !isExpiredMsg;
+        const active = res.data?.successstatus ? isActiveMsg : null;
+
+        setSubscriptionCheck({ loading: false, message: msg, active, data: subData });
       } catch (err) {
         if (!mounted) return;
         setSubscriptionCheck({
           loading: false,
           message: "Check failed",
           active: null,
+          data: null,
         });
       }
     })();
@@ -164,10 +189,8 @@ const DashboardHome = () => {
         toast.success("Vehicle added! QR code generated.");
         setShowAddVehicle(false);
         setVehicleNumber("");
-        // refresh dashboard/owner and fetch QR image for inline display
         try {
           if (typeof refreshOwner === "function") await refreshOwner();
-          // try to fetch qr image
           const imgRes = await getQRCodeImage();
           if (imgRes && imgRes.data) {
             const blob = imgRes.data;
@@ -180,7 +203,6 @@ const DashboardHome = () => {
             setQrImageUrl(url);
           }
         } catch (err) {
-          // Non-fatal; show toast
           console.warn("QR image fetch failed", err);
         }
       } else {
@@ -191,6 +213,40 @@ const DashboardHome = () => {
     } finally {
       setAdding(false);
     }
+  };
+
+  // Format expiry display with relative context
+  const formatPlanExpiry = () => {
+    if (!latestPlan) return "—";
+    const dateStr = new Date(latestPlan.effective_until).toLocaleDateString("en-IN");
+    return dateStr;
+  };
+
+  // Get the plan expiry label
+  const getPlanExpiryLabel = () => {
+    if (!latestPlan) return "Plan Expires";
+    if (isLatestPlanActive) {
+      if (daysUntilExpiry !== null && daysUntilExpiry <= 7) {
+        return "Expires Soon!";
+      }
+      return "Plan Expires";
+    }
+    return "Plan Expired";
+  };
+
+  // Stat card color override for expired plan
+  const getPlanExpiryColor = () => {
+    if (!latestPlan) return "bg-gray-100 text-gray-500";
+    if (!isLatestPlanActive) return "bg-red-100 text-red-600";
+    if (daysUntilExpiry !== null && daysUntilExpiry <= 7)
+      return "bg-orange-100 text-orange-600";
+    return "bg-amber-100 text-amber-600";
+  };
+
+  const getActivePlanColor = () => {
+    if (!latestPlan) return "bg-gray-100 text-gray-500";
+    if (!isLatestPlanActive) return "bg-red-100 text-red-600";
+    return "bg-purple-100 text-purple-600";
   };
 
   return (
@@ -209,8 +265,61 @@ const DashboardHome = () => {
         </p>
       </motion.div>
 
-      {/* Subscription Alert */}
-      {!hasActiveSubscription && (
+      {/* Subscription Status Banner from API */}
+      {subscriptionCheck.message && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className={`rounded-2xl p-4 mb-6 flex items-center gap-4 border ${
+            subscriptionCheck.active === true
+              ? "bg-green-50 border-green-200"
+              : subscriptionCheck.active === false
+                ? "bg-red-50 border-red-200"
+                : "bg-gray-50 border-gray-200"
+          }`}
+        >
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+              subscriptionCheck.active === true
+                ? "bg-green-100 text-green-600"
+                : subscriptionCheck.active === false
+                  ? "bg-red-100 text-red-600"
+                  : "bg-gray-100 text-gray-600"
+            }`}
+          >
+            {subscriptionCheck.active === true ? (
+              <FiCreditCard className="text-lg" />
+            ) : (
+              <FiAlertCircle className="text-lg" />
+            )}
+          </div>
+          <div className="flex-1">
+            <p
+              className={`font-medium text-sm ${
+                subscriptionCheck.active === true
+                  ? "text-green-800"
+                  : subscriptionCheck.active === false
+                    ? "text-red-800"
+                    : "text-gray-800"
+              }`}
+            >
+              {subscriptionCheck.message}
+            </p>
+          </div>
+          {subscriptionCheck.active === false && (
+            <Link
+              to="/dashboard/plans"
+              className="btn-accent text-sm !py-2 shrink-0"
+            >
+              Renew Now <FiArrowRight className="ml-1 inline" />
+            </Link>
+          )}
+        </motion.div>
+      )}
+
+      {/* Subscription Alert (when no plans at all / assign vehicle) */}
+      {!hasActiveSubscription && !subscriptionCheck.message && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -275,18 +384,26 @@ const DashboardHome = () => {
             color: "bg-green-100 text-green-600",
           },
           {
-            label: "Active Plan",
-            value: activePlan?.recharge_name || "—",
+            label: latestPlan
+              ? isLatestPlanActive
+                ? "Active Plan"
+                : "Expired Plan"
+              : "Active Plan",
+            value: latestPlan?.recharge_name || "—",
             icon: <FiCreditCard />,
-            color: "bg-purple-100 text-purple-600",
+            color: getActivePlanColor(),
           },
           {
-            label: "Plan Expires",
-            value: activePlan
-              ? new Date(activePlan.effective_until).toLocaleDateString("en-IN")
-              : "—",
-            icon: <FiBell />,
-            color: "bg-amber-100 text-amber-600",
+            label: getPlanExpiryLabel(),
+            value: formatPlanExpiry(),
+            icon: <FiCalendar />,
+            color: getPlanExpiryColor(),
+            sublabel:
+              latestPlan && !isLatestPlanActive
+                ? `Expired ${Math.abs(daysUntilExpiry)} day${Math.abs(daysUntilExpiry) !== 1 ? "s" : ""} ago`
+                : latestPlan && isLatestPlanActive && daysUntilExpiry !== null && daysUntilExpiry <= 7
+                  ? `${daysUntilExpiry} day${daysUntilExpiry !== 1 ? "s" : ""} left`
+                  : null,
           },
         ].map((stat, i) => (
           <motion.div
@@ -305,6 +422,15 @@ const DashboardHome = () => {
               {stat.value}
             </p>
             <p className="text-xs text-gray-400 mt-1">{stat.label}</p>
+            {stat.sublabel && (
+              <p
+                className={`text-xs mt-1 font-medium ${
+                  !isLatestPlanActive ? "text-red-500" : "text-orange-500"
+                }`}
+              >
+                {stat.sublabel}
+              </p>
+            )}
           </motion.div>
         ))}
       </div>
@@ -369,19 +495,6 @@ const DashboardHome = () => {
           transition={{ delay: 0.4 }}
           className="card p-6"
         >
-          {subscriptionCheck.message && (
-            <div
-              className={`mb-3 p-2 rounded text-sm ${
-                subscriptionCheck.active === true
-                  ? "bg-green-50 text-green-700"
-                  : subscriptionCheck.active === false
-                    ? "bg-red-50 text-red-700"
-                    : "bg-gray-50 text-gray-700"
-              }`}
-            >
-              {subscriptionCheck.message}
-            </div>
-          )}
           <h3 className="font-display font-semibold text-lg text-gray-800 mb-4 flex items-center gap-2">
             <FiBell className="text-green-500" /> Recent Alerts
           </h3>
@@ -619,7 +732,7 @@ const DashboardHome = () => {
         </div>
       )}
 
-      {/* Active Subscription Plans */}
+      {/* Subscription Plans History */}
       {subscriptionPlans.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -628,49 +741,77 @@ const DashboardHome = () => {
           className="card p-6 mt-8"
         >
           <h3 className="font-display font-semibold text-lg text-gray-800 mb-4 flex items-center gap-2">
-            <FiCreditCard className="text-purple-500" /> Active Subscription
+            <FiCreditCard className={hasActiveSubscription ? "text-green-500" : "text-red-400"} />
+            {hasActiveSubscription ? "Subscription Details" : "Subscription Details — Expired"}
           </h3>
           <div className="space-y-3">
-            {subscriptionPlans.map((plan, i) => (
-              <div
-                key={i}
-                className="flex items-start justify-between p-4 bg-purple-50 rounded-xl border border-purple-100"
-              >
-                <div>
-                  <p className="font-semibold text-gray-800">
-                    {plan.recharge_name}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {plan.recharge_description}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Active from:{" "}
-                    <strong>
-                      {new Date(plan.effective_from).toLocaleDateString()}
-                    </strong>
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Expires:{" "}
-                    <strong>
-                      {new Date(plan.effective_until).toLocaleDateString()}
-                    </strong>
-                  </p>
+            {subscriptionPlans.map((plan, i) => {
+              const isPlanActive =
+                new Date(plan.effective_until) >= new Date();
+              const planDaysLeft = getDaysUntilExpiry(plan.effective_until);
+
+              return (
+                <div
+                  key={i}
+                  className={`flex items-start justify-between p-4 rounded-xl border ${
+                    isPlanActive
+                      ? "bg-green-50 border-green-200"
+                      : "bg-red-50 border-red-200"
+                  }`}
+                >
+                  <div>
+                    <p className="font-semibold text-gray-800">
+                      {plan.recharge_name}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {plan.recharge_description}
+                    </p>
+                    <div className="mt-2 space-y-0.5">
+                      <p className="text-xs text-gray-500">
+                        Active from:{" "}
+                        <strong>
+                          {new Date(plan.effective_from).toLocaleDateString("en-IN")}
+                        </strong>
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {isPlanActive ? "Expires:" : "Expired:"}{" "}
+                        <strong>
+                          {new Date(plan.effective_until).toLocaleDateString("en-IN")}
+                        </strong>
+                      </p>
+                    </div>
+                    {/* Contextual sublabel */}
+                    {isPlanActive && planDaysLeft !== null && planDaysLeft <= 7 && (
+                      <p className="text-xs text-orange-600 font-medium mt-1">
+                        ⚠️ Expires in {planDaysLeft} day{planDaysLeft !== 1 ? "s" : ""}
+                      </p>
+                    )}
+                    {!isPlanActive && planDaysLeft !== null && (
+                      <p className="text-xs text-red-600 font-medium mt-1">
+                        Expired {Math.abs(planDaysLeft)} day{Math.abs(planDaysLeft) !== 1 ? "s" : ""} ago
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right flex flex-col items-end gap-2">
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-white text-xs font-medium ${
+                        isPlanActive ? "bg-green-500" : "bg-red-500"
+                      }`}
+                    >
+                      {isPlanActive ? "Active" : "Expired"}
+                    </span>
+                    {!isPlanActive && (
+                      <Link
+                        to="/dashboard/plans"
+                        className="text-xs text-primary-600 hover:text-primary-700 font-medium underline underline-offset-2"
+                      >
+                        Renew Now →
+                      </Link>
+                    )}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-white text-xs font-medium ${
-                      new Date(plan.effective_until) >= new Date()
-                        ? "bg-green-500"
-                        : "bg-red-500"
-                    }`}
-                  >
-                    {new Date(plan.effective_until) >= new Date()
-                      ? "Active"
-                      : "Expired"}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       )}

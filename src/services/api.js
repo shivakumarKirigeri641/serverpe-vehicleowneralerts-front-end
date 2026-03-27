@@ -47,6 +47,10 @@ export const reportMisuse = (qrcodeNumber) =>
 export const checkSubscriptionStatus = (vehicleNumber) =>
   api.get(`/vehiclealerts/check-subscription-status/${vehicleNumber}`);
 
+// Fetch Indian states / union territories
+export const getStatesUnions = () =>
+  api.get("/vehiclealerts/states-unions");
+
 // Leave message for vehicle owner when scanner can't contact owner
 export const leaveMessageToVehicleOwner = (payload) =>
   api.post("/vehiclealerts/scan/leave-message-to-vehicle-owner", payload);
