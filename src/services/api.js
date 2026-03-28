@@ -1,5 +1,7 @@
 import axios from "axios";
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:7777";
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
@@ -28,10 +30,8 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
 // Public APIs
-// Policy APIs
-export const getPolicy = (policyType) =>
-  api.get(`/vehiclealerts/policies/${policyType}`);
 export const getSubscriptionPlans = () =>
   api.get("/vehiclealerts/subscription-plans");
 export const getQueryTypes = () => api.get("/vehiclealerts/query-type");
@@ -62,6 +62,8 @@ export const sendLoginOtp = (data) =>
 export const verifyLoginOtp = (data) =>
   api.post("/vehicleowner/login/verify-otp", data);
 
+export const verifySubscriptionOtp = (data) =>
+  api.post("/vehicleowner/subscription/verify-otp", data);
 // Vehicle Owner Protected
 export const vehicleOwnerLogout = () =>
   api.post("/vehicleowner/credentials/logout");
