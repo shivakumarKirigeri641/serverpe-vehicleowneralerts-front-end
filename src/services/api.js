@@ -61,6 +61,8 @@ export const sendChatMessage = (data) =>
   api.post("/vehiclealerts/scan/send-message", data);
 export const syncOwnerChat = (qrcodeNumber) =>
   api.get(`/vehiclealerts/scan/send-alert-owner/${qrcodeNumber}`);
+export const endChatSession = (data) =>
+  api.post("/vehiclealerts/scan/end-session", data);
 
 // Vehicle Owner Auth
 export const sendSubscriptionOtp = (data) =>

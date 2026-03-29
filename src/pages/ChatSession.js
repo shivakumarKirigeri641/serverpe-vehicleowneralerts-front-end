@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiSend, FiArrowLeft, FiClock, FiShield } from "react-icons/fi";
 import toast from "react-hot-toast";
-import { sendChatMessage } from "../services/api";
+import { sendChatMessage, endChatSession } from "../services/api";
 
 const ChatSession = () => {
   const navigate = useNavigate();
@@ -47,7 +47,13 @@ const ChatSession = () => {
           }
         }
       } catch (err) {
-        console.error("Poll error:", err);
+        if (err.response?.data?.message === "Session ended" || err.response?.status === 403) {
+          window.alert("Session ended.");
+          localStorage.removeItem("vehicle_chat_session");
+          window.location.href = "https://serverpe.in";
+        } else {
+          console.error("Poll error:", err);
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -129,6 +135,65 @@ const ChatSession = () => {
     return `${minutes} min left`;
   };
 
+  const endSessionApi = async () => {
+    if (!session) return;
+    try {
+      await endChatSession({
+        alert_id: session.alert_id,
+        qrcode_number: session.qrcode_number,
+        is_scanner: !!session.is_scanner,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (!session?.expires_at) return;
+    const checkExpiry = setInterval(async () => {
+      const end = new Date(session.expires_at).getTime();
+      const now = new Date().getTime();
+      if (end - now <= 0) {
+        clearInterval(checkExpiry);
+        window.alert("Your session has expired.");
+        await endSessionApi();
+        localStorage.removeItem("vehicle_chat_session");
+        window.location.href = "https://serverpe.in";
+      }
+    }, 1000);
+    return () => clearInterval(checkExpiry);
+  }, [session, navigate]);
+
+  const handleEndChat = async () => {
+    if (window.confirm("Are you sure you want to end this chat session?")) {
+      await endSessionApi();
+      localStorage.removeItem("vehicle_chat_session");
+      window.location.href = "https://serverpe.in";
+    }
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (session) {
+        const payload = JSON.stringify({
+          alert_id: session.alert_id,
+          qrcode_number: session.qrcode_number,
+          is_scanner: !!session.is_scanner,
+        });
+        const url = (process.env.REACT_APP_API_URL || "http://localhost:7777") + "/vehiclealerts/scan/end-session";
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+          keepalive: true
+        }).catch(err => console.error(err));
+        localStorage.removeItem("vehicle_chat_session");
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [session]);
+
   if (!session) return null;
 
   return (
@@ -156,7 +221,12 @@ const ChatSession = () => {
               )}
             </div>
           </div>
-          <div className="w-8" /> {/* Spacer for centering */}
+          <button
+            onClick={handleEndChat}
+            className="text-xs font-semibold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-full transition-colors"
+          >
+            End Chat
+          </button>
         </div>
       </div>
 
@@ -233,8 +303,11 @@ const ChatSession = () => {
           <input
             type="text"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
+            onChange={(e) => {
+              if (e.target.value.length <= 50) setNewMessage(e.target.value);
+            }}
+            maxLength={50}
+            placeholder="Type your message (max 50 chars)..."
             className="w-full bg-gray-100/80 border-0 rounded-full py-3.5 pl-5 pr-14 text-[15px] text-gray-800 placeholder-gray-400 focus:bg-gray-100 focus:ring-2 focus:ring-primary-500 transition-all font-medium"
             autoComplete="off"
             disabled={calculateTimeLeft() === "Expired"}
