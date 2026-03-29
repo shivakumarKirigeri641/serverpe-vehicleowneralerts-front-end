@@ -22,6 +22,8 @@ const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Feedback = lazy(() => import("./pages/Feedback"));
 const ScanPage = lazy(() => import("./pages/ScanPage"));
+const ChatSession = lazy(() => import("./pages/ChatSession"));
+const ChatSync = lazy(() => import("./pages/ChatSync"));
 const Subscribe = lazy(() => import("./pages/Subscribe"));
 const Login = lazy(() => import("./pages/Login"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -46,7 +48,8 @@ const AppLayout = () => {
   const isScanPage = location.pathname.startsWith("/scan/");
   const isDashboard = location.pathname.startsWith("/dashboard");
   const isAuthPage = ["/login", "/subscribe"].includes(location.pathname);
-  const hideNavFooter = isScanPage || isDashboard || isAuthPage;
+  const isChatPage = location.pathname.startsWith("/chat");
+  const hideNavFooter = isScanPage || isDashboard || isAuthPage || isChatPage;
 
   return (
     <>
@@ -67,6 +70,8 @@ const AppLayout = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/feedback" element={<Feedback />} />
           <Route path="/scan/:qrcodeNumber" element={<ScanPage />} />
+          <Route path="/chat" element={<ChatSession />} />
+          <Route path="/chat-sync/:qrcodeNumber" element={<ChatSync />} />
           <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/login" element={<Login />} />
           <Route path="/privacy" element={<Privacy />} />

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiSend,
@@ -9,7 +9,7 @@ import {
   FiShield,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
-import { scanQRCode, submitScan, reportMisuse } from "../services/api";
+import { scanQRCode, submitScan, reportMisuse, startChatSession } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 const ScanPage = () => {
@@ -24,6 +24,8 @@ const ScanPage = () => {
   const [showReport, setShowReport] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [startingChat, setStartingChat] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!qrcodeNumber) return;
@@ -75,6 +77,23 @@ const ScanPage = () => {
       toast.error(err.response?.data?.message || "Something went wrong");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleStartChat = async () => {
+    setStartingChat(true);
+    try {
+      const res = await startChatSession({ qrcode_number: qrcodeNumber });
+      if (res.data?.successstatus || res.data?.status === "Success") {
+        localStorage.setItem("vehicle_chat_session", JSON.stringify(res.data.data));
+        navigate("/chat");
+      } else {
+        toast.error(res.data?.message || "Failed to start chat session");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to start chat session");
+    } finally {
+      setStartingChat(false);
     }
   };
 
@@ -333,6 +352,38 @@ const ScanPage = () => {
             )}
           </button>
         </motion.form>
+
+        {/* Start Chat */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-6 card p-6 text-center"
+        >
+          <h3 className="font-display font-semibold text-gray-800 mb-2">
+            Urgent Matter?
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Start a temporary, anonymous live chat with the vehicle owner.
+          </p>
+          <button
+            onClick={handleStartChat}
+            disabled={startingChat}
+            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-primary-50 text-primary-700 hover:bg-primary-100 rounded-xl font-medium transition-colors focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {startingChat ? (
+              <motion.div
+                className="w-5 h-5 border-2 border-primary-500/30 border-t-primary-500 rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              />
+            ) : (
+              <>
+                <span className="text-xl">💬</span> Start Live Chat
+              </>
+            )}
+          </button>
+        </motion.div>
 
         {/* Report Misuse */}
         <motion.div

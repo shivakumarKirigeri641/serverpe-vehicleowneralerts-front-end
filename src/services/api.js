@@ -54,6 +54,14 @@ export const getStatesUnions = () => api.get("/vehiclealerts/states-unions");
 export const leaveMessageToVehicleOwner = (payload) =>
   api.post("/vehiclealerts/scan/leave-message-to-vehicle-owner", payload);
 
+// Temporary Chat Session APIs
+export const startChatSession = (data) =>
+  api.post("/vehiclealerts/scan/send-alert", data);
+export const sendChatMessage = (data) =>
+  api.post("/vehiclealerts/scan/send-message", data);
+export const syncOwnerChat = (qrcodeNumber) =>
+  api.get(`/vehiclealerts/scan/send-alert-owner/${qrcodeNumber}`);
+
 // Vehicle Owner Auth
 export const sendSubscriptionOtp = (data) =>
   api.post("/vehicleowner/subscription/send-otp", data);
