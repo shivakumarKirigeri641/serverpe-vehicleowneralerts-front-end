@@ -59,8 +59,8 @@ export const startChatSession = (data) =>
   api.post("/vehiclealerts/scan/send-alert", data);
 export const sendChatMessage = (data) =>
   api.post("/vehiclealerts/scan/send-message", data);
-export const syncOwnerChat = (qrcodeNumber) =>
-  api.get(`/vehiclealerts/scan/send-alert-owner/${qrcodeNumber}`);
+export const syncOwnerChat = (alertId) =>
+  api.get(`/vehiclealerts/scan/send-alert-owner/${alertId}`);
 export const endChatSession = (data) =>
   api.post("/vehiclealerts/scan/end-session", data);
 

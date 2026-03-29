@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiSend, FiArrowLeft, FiClock, FiShield } from "react-icons/fi";
@@ -135,7 +135,7 @@ const ChatSession = () => {
     return `${minutes} min left`;
   };
 
-  const endSessionApi = async () => {
+  const endSessionApi = useCallback(async () => {
     if (!session) return;
     try {
       await endChatSession({
@@ -146,7 +146,7 @@ const ChatSession = () => {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [session]);
 
   useEffect(() => {
     if (!session?.expires_at) return;
@@ -162,7 +162,7 @@ const ChatSession = () => {
       }
     }, 1000);
     return () => clearInterval(checkExpiry);
-  }, [session, navigate]);
+  }, [session, navigate, endSessionApi]);
 
   const handleEndChat = async () => {
     if (window.confirm("Are you sure you want to end this chat session?")) {

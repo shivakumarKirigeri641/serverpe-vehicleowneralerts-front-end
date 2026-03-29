@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  FiSend,
   FiAlertTriangle,
   FiCheckCircle,
-  FiChevronDown,
   FiShield,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -18,12 +16,9 @@ const ScanPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [scanData, setScanData] = useState(null);
-  const [selectedConcern, setSelectedConcern] = useState("");
-  const [customMessage, setCustomMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [startingChat, setStartingChat] = useState(false);
   const navigate = useNavigate();
 
@@ -45,40 +40,7 @@ const ScanPage = () => {
       .finally(() => setLoading(false));
   }, [qrcodeNumber]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedConcern) {
-      toast.error("Please select a concern");
-      return;
-    }
-    if (selectedConcern === "Others" && !customMessage.trim()) {
-      toast.error("Please enter your message");
-      return;
-    }
 
-    setSubmitting(true);
-    try {
-      const payload = {
-        qrcode_number: qrcodeNumber,
-        concern_message_selected: selectedConcern,
-      };
-      if (selectedConcern === "Others" && customMessage.trim()) {
-        payload.message = customMessage.trim();
-      }
-
-      const res = await submitScan(payload);
-      if (res.data?.successstatus || res.data?.status === "Success") {
-        setSubmitted(true);
-        toast.success("Alert sent to the vehicle owner!");
-      } else {
-        toast.error(res.data?.message || "Failed to send alert");
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Something went wrong");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const handleStartChat = async () => {
     setStartingChat(true);
@@ -137,48 +99,6 @@ const ScanPage = () => {
       </div>
     );
   }
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-white px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="card p-8 text-center max-w-md w-full"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", delay: 0.2 }}
-            className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center"
-          >
-            <FiCheckCircle className="text-green-500 text-3xl" />
-          </motion.div>
-          <h2 className="font-display font-bold text-2xl text-gray-800 mb-2">
-            Alert Sent!
-          </h2>
-          <p className="text-gray-500 mb-2">
-            The vehicle owner of <strong>{scanData?.vehicle_number}</strong> has
-            been notified.
-          </p>
-          <p className="text-gray-400 text-sm mb-6">
-            They should respond shortly. Thank you for helping!
-          </p>
-          <div className="bg-primary-50 rounded-xl p-4 text-sm text-primary-700">
-            Concern: <strong>{selectedConcern}</strong>
-            {customMessage && <p className="mt-1 text-xs">"{customMessage}"</p>}
-          </div>
-          <div className="flex items-center justify-center gap-2 text-xs text-gray-400 mt-6">
-            <FiShield /> Powered by ServerPe App Solutions
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  const selectedObj = scanData?.concern_messages_list?.find(
-    (c) => c.phrase === selectedConcern,
-  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white px-4 py-8 md:py-12">

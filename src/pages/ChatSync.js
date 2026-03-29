@@ -6,16 +6,16 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import { FiAlertTriangle } from "react-icons/fi";
 
 const ChatSync = () => {
-  const { qrcodeNumber } = useParams();
+  const { alertId } = useParams();
   const navigate = useNavigate();
   const [error, setError] = React.useState("");
 
   useEffect(() => {
-    if (!qrcodeNumber) return;
+    if (!alertId) return;
 
     const syncChat = async () => {
       try {
-        const res = await syncOwnerChat(qrcodeNumber);
+        const res = await syncOwnerChat(alertId);
         
         const data = res.data?.data;
         if (data && data.alert_details) {
@@ -38,7 +38,7 @@ const ChatSync = () => {
     };
 
     syncChat();
-  }, [qrcodeNumber, navigate]);
+  }, [alertId, navigate]);
 
   if (error) {
     return (

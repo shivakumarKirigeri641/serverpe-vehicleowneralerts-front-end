@@ -71,7 +71,7 @@ const AppLayout = () => {
           <Route path="/feedback" element={<Feedback />} />
           <Route path="/scan/:qrcodeNumber" element={<ScanPage />} />
           <Route path="/chat" element={<ChatSession />} />
-          <Route path="/chat-sync/:qrcodeNumber" element={<ChatSync />} />
+          <Route path="/chat-sync/:alertId" element={<ChatSync />} />
           <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/login" element={<Login />} />
           <Route path="/privacy" element={<Privacy />} />
