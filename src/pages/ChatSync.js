@@ -27,7 +27,7 @@ const ChatSync = () => {
             expires_at: data.alert_details.expires_at,
           };
           localStorage.setItem("vehicle_chat_session", JSON.stringify(normalizedSession));
-          navigate("/chat");
+          navigate("/vehiclealerts/public/scan/chat");
         } else {
            setError("Failed to sync chat session. Invalid Response.");
         }

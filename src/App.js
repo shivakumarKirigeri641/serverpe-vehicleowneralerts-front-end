@@ -45,10 +45,10 @@ const PaymentSuccess = lazy(() => import("./pages/dashboard/PaymentSuccess"));
 
 const AppLayout = () => {
   const location = useLocation();
-  const isScanPage = location.pathname.startsWith("/scan/");
+  const isScanPage = location.pathname.startsWith("/vehiclealerts/public/scan/");
   const isDashboard = location.pathname.startsWith("/dashboard");
   const isAuthPage = ["/login", "/subscribe"].includes(location.pathname);
-  const isChatPage = location.pathname.startsWith("/chat");
+  const isChatPage = location.pathname.startsWith("/vehiclealerts/public/scan/chat");
   const hideNavFooter = isScanPage || isDashboard || isAuthPage || isChatPage;
 
   return (
@@ -69,9 +69,9 @@ const AppLayout = () => {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/feedback" element={<Feedback />} />
-          <Route path="/scan/:qrcodeNumber" element={<ScanPage />} />
-          <Route path="/chat" element={<ChatSession />} />
-          <Route path="/chat-sync/:alertId" element={<ChatSync />} />
+          <Route path="/vehiclealerts/public/scan/:qrcodeNumber" element={<ScanPage />} />
+          <Route path="/vehiclealerts/public/scan/chat" element={<ChatSession />} />          
+          <Route path="/vehiclealerts/public/scan/chat-sync/:alertId" element={<ChatSync />} />
           <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/login" element={<Login />} />
           <Route path="/privacy" element={<Privacy />} />

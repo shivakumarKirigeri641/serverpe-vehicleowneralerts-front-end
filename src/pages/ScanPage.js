@@ -48,7 +48,7 @@ const ScanPage = () => {
       const res = await startChatSession({ qrcode_number: qrcodeNumber });
       if (res.data?.successstatus || res.data?.status === "Success") {
         localStorage.setItem("vehicle_chat_session", JSON.stringify(res.data.data));
-        navigate("/chat");
+        navigate("/vehiclealerts/public/scan/chat");
       } else {
         toast.error(res.data?.message || "Failed to start chat session");
       }
