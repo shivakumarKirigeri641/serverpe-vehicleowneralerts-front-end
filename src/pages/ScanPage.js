@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
-  FiSend,
   FiAlertTriangle,
   FiCheckCircle,
-  FiChevronDown,
   FiShield,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
-import { scanQRCode, submitScan, reportMisuse } from "../services/api";
+import { scanQRCode, submitScan, reportMisuse, startChatSession } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 const ScanPage = () => {
@@ -18,12 +16,11 @@ const ScanPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [scanData, setScanData] = useState(null);
-  const [selectedConcern, setSelectedConcern] = useState("");
-  const [customMessage, setCustomMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [startingChat, setStartingChat] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!qrcodeNumber) return;
@@ -43,38 +40,22 @@ const ScanPage = () => {
       .finally(() => setLoading(false));
   }, [qrcodeNumber]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedConcern) {
-      toast.error("Please select a concern");
-      return;
-    }
-    if (selectedConcern === "Others" && !customMessage.trim()) {
-      toast.error("Please enter your message");
-      return;
-    }
 
-    setSubmitting(true);
+
+  const handleStartChat = async () => {
+    setStartingChat(true);
     try {
-      const payload = {
-        qrcode_number: qrcodeNumber,
-        concern_message_selected: selectedConcern,
-      };
-      if (selectedConcern === "Others" && customMessage.trim()) {
-        payload.message = customMessage.trim();
-      }
-
-      const res = await submitScan(payload);
+      const res = await startChatSession({ qrcode_number: qrcodeNumber });
       if (res.data?.successstatus || res.data?.status === "Success") {
-        setSubmitted(true);
-        toast.success("Alert sent to the vehicle owner!");
+        localStorage.setItem("vehicle_chat_session", JSON.stringify(res.data.data));
+        navigate("/vehiclealerts/public/scan/chat");
       } else {
-        toast.error(res.data?.message || "Failed to send alert");
+        toast.error(res.data?.message || "Failed to start chat session");
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Something went wrong");
+      toast.error(err.response?.data?.message || "Failed to start chat session");
     } finally {
-      setSubmitting(false);
+      setStartingChat(false);
     }
   };
 
@@ -118,48 +99,6 @@ const ScanPage = () => {
       </div>
     );
   }
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-white px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="card p-8 text-center max-w-md w-full"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", delay: 0.2 }}
-            className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center"
-          >
-            <FiCheckCircle className="text-green-500 text-3xl" />
-          </motion.div>
-          <h2 className="font-display font-bold text-2xl text-gray-800 mb-2">
-            Alert Sent!
-          </h2>
-          <p className="text-gray-500 mb-2">
-            The vehicle owner of <strong>{scanData?.vehicle_number}</strong> has
-            been notified.
-          </p>
-          <p className="text-gray-400 text-sm mb-6">
-            They should respond shortly. Thank you for helping!
-          </p>
-          <div className="bg-primary-50 rounded-xl p-4 text-sm text-primary-700">
-            Concern: <strong>{selectedConcern}</strong>
-            {customMessage && <p className="mt-1 text-xs">"{customMessage}"</p>}
-          </div>
-          <div className="flex items-center justify-center gap-2 text-xs text-gray-400 mt-6">
-            <FiShield /> Powered by ServerPe App Solutions
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  const selectedObj = scanData?.concern_messages_list?.find(
-    (c) => c.phrase === selectedConcern,
-  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white px-4 py-8 md:py-12">
@@ -217,122 +156,39 @@ const ScanPage = () => {
           </p>
         </motion.div>
 
-        {/* Concern Form */}
-        <motion.form
+
+
+        {/* Start Chat */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          onSubmit={handleSubmit}
-          className="card p-6"
+          transition={{ delay: 0.3 }}
+          className="mt-6 card p-6 text-center"
         >
-          <h2 className="font-display font-semibold text-gray-800 mb-4">
-            What's your concern?
-          </h2>
-
-          {/* Custom Dropdown */}
-          <div className="relative mb-4">
-            <button
-              type="button"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full flex items-center justify-between px-4 py-3.5 border border-gray-300 rounded-xl text-left bg-white hover:border-primary-400 transition-colors focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            >
-              <span
-                className={selectedConcern ? "text-gray-800" : "text-gray-400"}
-              >
-                {selectedConcern || "Select a concern..."}
-              </span>
-              <FiChevronDown
-                className={`transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-
-            <AnimatePresence>
-              {dropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden max-h-64 overflow-y-auto"
-                >
-                  {scanData?.concern_messages_list?.map((concern) => (
-                    <button
-                      key={concern.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedConcern(concern.phrase);
-                        setDropdownOpen(false);
-                        if (concern.phrase !== "Others") setCustomMessage("");
-                      }}
-                      className={`w-full text-left px-4 py-3 hover:bg-primary-50 transition-colors border-b border-gray-50 last:border-0 ${
-                        selectedConcern === concern.phrase
-                          ? "bg-primary-50 text-primary-700"
-                          : ""
-                      }`}
-                    >
-                      <p className="font-medium text-sm text-gray-800">
-                        {concern.phrase}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {concern.description}
-                      </p>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {selectedObj && (
-            <p className="text-xs text-gray-400 mb-4 -mt-2 px-1">
-              {selectedObj.description}
-            </p>
-          )}
-
-          {/* Custom Message for "Others" */}
-          <AnimatePresence>
-            {selectedConcern === "Others" && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-4"
-              >
-                <textarea
-                  value={customMessage}
-                  onChange={(e) => {
-                    if (e.target.value.length <= 20)
-                      setCustomMessage(e.target.value);
-                  }}
-                  placeholder="Type your message (max 20 characters)"
-                  className="input-field resize-none h-20"
-                  maxLength={20}
-                />
-                <p className="text-xs text-gray-400 mt-1 text-right">
-                  {customMessage.length}/20
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Submit */}
+          <h3 className="font-display font-semibold text-gray-800 mb-2">
+            Urgent Matter?
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Start a temporary, anonymous live chat with the vehicle owner.
+          </p>
           <button
-            type="submit"
-            disabled={submitting || !selectedConcern}
-            className="btn-primary w-full gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleStartChat}
+            disabled={startingChat}
+            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-primary-50 text-primary-700 hover:bg-primary-100 rounded-xl font-medium transition-colors focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? (
+            {startingChat ? (
               <motion.div
-                className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                className="w-5 h-5 border-2 border-primary-500/30 border-t-primary-500 rounded-full"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               />
             ) : (
               <>
-                <FiSend /> Send Alert to Owner
+                <span className="text-xl">💬</span> Start Live Chat
               </>
             )}
           </button>
-        </motion.form>
+        </motion.div>
 
         {/* Report Misuse */}
         <motion.div

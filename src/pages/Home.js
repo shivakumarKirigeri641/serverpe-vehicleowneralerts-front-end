@@ -10,6 +10,7 @@ import {
   FiStar,
   FiZap,
   FiMapPin,
+  FiX,
 } from "react-icons/fi";
 import { HiOutlineQrCode } from "react-icons/hi2";
 import { getSubscriptionPlans } from "../services/api";
@@ -325,7 +326,7 @@ const Home = () => {
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {plans.map((plan, i) => (
                 <div
-                  key={plan.rpid}
+                  key={plan.id}
                   className={`relative ${plan.is_popular ? "pt-4" : ""}`}
                 >
                   {plan.is_popular && (
@@ -375,31 +376,43 @@ const Home = () => {
                     <ul className="space-y-3 mb-8 text-sm">
                       <li className="flex items-center gap-2">
                         <FiCheckCircle className="text-green-500 shrink-0" />{" "}
-                        {plan.alerts_per_day
-                          ? `${plan.alerts_per_day} alert/day`
-                          : "Unlimited alerts"}
+                        {plan.alert_limit === 0 ||
+                        plan.alert_limit === undefined
+                          ? "Unlimited alerts"
+                          : `${plan.alert_limit} alert(s)`}
                       </li>
                       <li className="flex items-center gap-2">
-                        <FiCheckCircle className="text-green-500 shrink-0" />{" "}
-                        SMS Notifications
+                        {plan.sms_backup ? (
+                          <FiCheckCircle className="text-green-500 shrink-0" />
+                        ) : (
+                          <FiX className="text-gray-300 shrink-0" />
+                        )}{" "}
+                        <span
+                          className={!plan.sms_backup ? "text-gray-400" : ""}
+                        >
+                          SMS Notifications
+                        </span>
                       </li>
-                      {plan.whatsapp_alerts && (
-                        <li className="flex items-center gap-2">
-                          <FiCheckCircle className="text-green-500 shrink-0" />{" "}
-                          WhatsApp Alerts
-                        </li>
-                      )}
+                      {plan.report_modes &&
+                        plan.report_modes !== "Not available" && (
+                          <li className="flex items-center gap-2">
+                            <FiCheckCircle className="text-green-500 shrink-0" />{" "}
+                            WhatsApp Summaries
+                          </li>
+                        )}
                       {plan.location_link_in_alert && (
                         <li className="flex items-center gap-2">
                           <FiMapPin className="text-green-500 shrink-0" />{" "}
                           Location in Alert
                         </li>
                       )}
-                      <li className="flex items-center gap-2">
-                        <FiCheckCircle className="text-green-500 shrink-0" />{" "}
-                        {plan.multiple_contact_numbers} Contact Number
-                        {plan.multiple_contact_numbers > 1 ? "s" : ""}
-                      </li>
+                      {plan.multiple_contact_numbers !== undefined && (
+                        <li className="flex items-center gap-2">
+                          <FiCheckCircle className="text-green-500 shrink-0" />{" "}
+                          {plan.multiple_contact_numbers} Contact Number
+                          {plan.multiple_contact_numbers > 1 ? "s" : ""}
+                        </li>
+                      )}
                       <li className="flex items-center gap-2">
                         <FiStar className="text-green-500 shrink-0" /> Best for:{" "}
                         {plan.best_for}
@@ -407,7 +420,7 @@ const Home = () => {
                     </ul>
 
                     <Link
-                      to="/subscribe"
+                      to={`/subscribe?planId=${plan.id}`}
                       className={
                         plan.is_popular
                           ? "btn-primary w-full"

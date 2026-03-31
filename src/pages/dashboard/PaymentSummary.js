@@ -6,6 +6,7 @@ import {
   FiCheckCircle,
   FiLoader,
   FiAlertCircle,
+  FiX,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
@@ -35,7 +36,7 @@ const PaymentSummary = () => {
         const plans = res.data?.data || [];
 
         if (planId) {
-          const selectedPlan = plans.find((p) => String(p.rpid) === planId);
+          const selectedPlan = plans.find((p) => String(p.id) === planId);
           if (selectedPlan) {
             setPlan(selectedPlan);
           } else {
@@ -91,7 +92,7 @@ const PaymentSummary = () => {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               vehicle_number: owner.vehicle_number,
-              subscription_plan_id: plan.rpid,
+              subscription_plan_id: plan.id,
               amount: total,
             });
 
@@ -283,18 +284,24 @@ const PaymentSummary = () => {
               <div className="space-y-2 pt-4 border-t border-primary-200">
                 <div className="flex items-center gap-2 text-sm text-gray-700">
                   <FiCheckCircle className="text-green-500 shrink-0" />
-                  {plan.alerts_per_day
-                    ? `${plan.alerts_per_day} alerts/day`
-                    : "Unlimited alerts"}
+                  {plan.alert_limit === 0 || plan.alert_limit === undefined
+                    ? "Unlimited alerts"
+                    : `${plan.alert_limit} alerts/day`}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <FiCheckCircle className="text-green-500 shrink-0" />
-                  SMS Notifications
+                  {plan.sms_backup ? (
+                    <FiCheckCircle className="text-green-500 shrink-0" />
+                  ) : (
+                    <FiX className="text-gray-300 shrink-0" />
+                  )}
+                  <span className={!plan.sms_backup ? "text-gray-400" : ""}>
+                    SMS Notifications
+                  </span>
                 </div>
-                {plan.whatsapp_alerts && (
+                {plan.report_modes && plan.report_modes !== "Not available" && (
                   <div className="flex items-center gap-2 text-sm text-gray-700">
                     <FiCheckCircle className="text-green-500 shrink-0" />
-                    WhatsApp Alerts
+                    WhatsApp Summaries
                   </div>
                 )}
                 {plan.location_link_in_alert && (

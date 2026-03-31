@@ -1,14 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  FiCheckCircle,
-  FiX,
-  FiStar,
-  FiMapPin,
-  FiArrowRight,
-  FiCalendar,
-} from "react-icons/fi";
+import { FiCheckCircle, FiX, FiArrowRight, FiCalendar } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { getSubscriptionPlans } from "../../services/api";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -31,9 +24,42 @@ const DashboardPlans = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  // Features mapped to API fields
+  const featureList = [
+    {
+      key: "alert_limit",
+      label: "Alerts",
+      format: (v) =>
+        v === 0 || v === undefined ? "Unlimited" : `${v} alert(s)`,
+    },
+    {
+      key: "validity_days",
+      label: "Validity",
+      format: (v) => (v === 0 ? "Trial / On-demand" : `${v} days`),
+    },
+    { key: "sms_backup", label: "SMS Notifications", bool: true },
+    {
+      key: "replies_per_alert",
+      label: "Replies per alert",
+      format: (v) => v ?? "—",
+    },
+    {
+      key: "report_modes",
+      label: "Report Modes",
+      format: (v) => v || "Not available",
+    },
+    { key: "alert_history", label: "Alert History", format: (v) => v || "—" },
+    {
+      key: "spam_protection",
+      label: "Spam Protection",
+      format: (v) => v || "Basic",
+    },
+    { key: "support", label: "Support", format: (v) => v || "Basic" },
+  ];
+
   const handleSelectPlan = async (plan) => {
     // Navigate to payment summary with plan ID
-    navigate(`/dashboard/payment-summary?planId=${plan.rpid}`);
+    navigate(`/dashboard/payment-summary?planId=${plan.id}`);
   };
 
   if (loading) return <LoadingSpinner message="Loading plans..." />;
@@ -52,7 +78,7 @@ const DashboardPlans = () => {
       <div className="grid md:grid-cols-3 gap-6">
         {plans.map((plan, i) => (
           <motion.div
-            key={plan.rpid}
+            key={plan.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
@@ -87,60 +113,31 @@ const DashboardPlans = () => {
             </div>
 
             <ul className="space-y-2 mb-6 flex-1 text-sm">
-              <li className="flex items-center gap-2">
-                <FiCheckCircle className="text-green-500 shrink-0" />
-                {plan.alerts_per_day
-                  ? `${plan.alerts_per_day} alert/day`
-                  : "Unlimited alerts"}
-              </li>
-              <li className="flex items-center gap-2">
-                <FiCheckCircle className="text-green-500 shrink-0" /> SMS
-                Notifications
-              </li>
-              <li className="flex items-center gap-2">
-                {plan.whatsapp_alerts ? (
-                  <FiCheckCircle className="text-green-500 shrink-0" />
-                ) : (
-                  <FiX className="text-gray-300 shrink-0" />
-                )}
-                <span className={!plan.whatsapp_alerts ? "text-gray-400" : ""}>
-                  WhatsApp Alerts
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                {plan.is_weekly_summary ? (
-                  <FiCalendar className="text-green-500 shrink-0" />
-                ) : (
-                  <FiX className="text-gray-300 shrink-0" />
-                )}
-                <span
-                  className={!plan.is_weekly_summary ? "text-gray-400" : ""}
-                >
-                  Weekly Summary Report
-                  {plan.is_weekly_summary && (
-                    <span className="ml-1 text-xs text-green-600 font-medium">
-                      (WhatsApp · Every weekend)
+              {featureList.map((f) => {
+                const value = plan[f.key];
+                if (f.bool) {
+                  return (
+                    <li key={f.key} className="flex items-center gap-2">
+                      {value ? (
+                        <FiCheckCircle className="text-green-500 shrink-0" />
+                      ) : (
+                        <FiX className="text-gray-300 shrink-0" />
+                      )}
+                      <span className={!value ? "text-gray-400" : ""}>
+                        {f.label}
+                      </span>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={f.key} className="flex items-center gap-2">
+                    <FiCheckCircle className="text-green-500 shrink-0" />
+                    <span className="text-gray-700">
+                      {f.label}: <strong>{f.format(value)}</strong>
                     </span>
-                  )}
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                {plan.is_monthly_summary ? (
-                  <FiCalendar className="text-green-500 shrink-0" />
-                ) : (
-                  <FiX className="text-gray-300 shrink-0" />
-                )}
-                <span
-                  className={!plan.is_monthly_summary ? "text-gray-400" : ""}
-                >
-                  Monthly Summary Report
-                  {plan.is_monthly_summary && (
-                    <span className="ml-1 text-xs text-green-600 font-medium">
-                      (WhatsApp · Every month-end)
-                    </span>
-                  )}
-                </span>
-              </li>
+                  </li>
+                );
+              })}
             </ul>
 
             <button
@@ -156,15 +153,19 @@ const DashboardPlans = () => {
             </button>
 
             {/* Highlight for premium plans with summaries */}
-            {(plan.is_weekly_summary || plan.is_monthly_summary) && (
+            {(/7\b|7 days|last 7|weekly/i.test(plan.report_modes || "") ||
+              /month|monthly/i.test(plan.report_modes || "")) && (
               <div className="mt-4 p-3 rounded bg-green-50 border border-green-200 text-green-800 text-xs text-center">
-                {plan.is_weekly_summary && plan.is_monthly_summary ? (
+                {/7\b|7 days|last 7|weekly/i.test(plan.report_modes || "") &&
+                /month|monthly/i.test(plan.report_modes || "") ? (
                   <>
                     <strong>WhatsApp Summaries:</strong> You will receive a{" "}
                     <b>Weekly</b> summary every weekend and a <b>Monthly</b>{" "}
                     summary at every month-end on WhatsApp.
                   </>
-                ) : plan.is_weekly_summary ? (
+                ) : /7\b|7 days|last 7|weekly/i.test(
+                    plan.report_modes || "",
+                  ) ? (
                   <>
                     <strong>WhatsApp Summary:</strong> You will receive a{" "}
                     <b>Weekly</b> summary every weekend on WhatsApp.
@@ -182,16 +183,13 @@ const DashboardPlans = () => {
             <div className="mt-4 p-3 rounded bg-blue-50 border border-blue-200 text-blue-800 text-xs text-center">
               {plan.price === 0 ? (
                 <>This plan is to try how the alert comes.</>
-              ) : plan.whatsapp_alerts ? (
+              ) : plan.sms_backup ? (
                 <>
-                  For vehicle owners who are ok with both SMS & WhatsApp alerts.
-                  Best for heavy users, especially auto & cab drivers.
+                  For vehicle owners who are ok with SMS notifications. Best for
+                  users who prefer SMS.
                 </>
               ) : (
-                <>
-                  For vehicle owners who are ok with SMS alerts (private
-                  vehicles).
-                </>
+                <>For vehicle owners who prefer in-app or WhatsApp summaries.</>
               )}
             </div>
           </motion.div>

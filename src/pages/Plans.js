@@ -30,35 +30,36 @@ const Plans = () => {
     fetchPlans();
   }, []);
 
+  // Map features to API fields returned by /subscription-plans
   const featureList = [
     {
-      key: "alerts_per_day",
-      label: "Alerts per day",
-      format: (v) => v || "Unlimited",
-    },
-    { key: "sms_notifications", label: "SMS Notifications", bool: true },
-    { key: "whatsapp_alerts", label: "WhatsApp Alerts", bool: true },
-    {
-      key: "instant_notifications",
-      label: "Instant Notifications",
-      bool: true,
-    },
-    { key: "usage_limits", label: "Usage", format: (v) => v },
-    {
-      key: "cooldown_minutes",
-      label: "Cooldown",
-      format: (v) => `${v} min between alerts`,
+      key: "alert_limit",
+      label: "Alerts",
+      format: (v) => (v === 0 || v === undefined ? "Unlimited" : `${v} alerts`),
     },
     {
-      key: "is_weekly_summary",
-      label: "Weekly Summary Report (WhatsApp)",
-      bool: true,
+      key: "validity_days",
+      label: "Validity",
+      format: (v) => (v === 0 ? "Trial / On-demand" : `${v} days`),
+    },
+    { key: "sms_backup", label: "SMS Notifications", bool: true },
+    {
+      key: "replies_per_alert",
+      label: "Replies per alert",
+      format: (v) => v ?? "—",
     },
     {
-      key: "is_monthly_summary",
-      label: "Monthly Summary Report (WhatsApp)",
-      bool: true,
+      key: "report_modes",
+      label: "Report Modes",
+      format: (v) => v || "Not available",
     },
+    { key: "alert_history", label: "Alert History", format: (v) => v || "—" },
+    {
+      key: "spam_protection",
+      label: "Spam Protection",
+      format: (v) => v || "Basic",
+    },
+    { key: "support", label: "Support", format: (v) => v || "Basic" },
   ];
 
   return (
@@ -100,7 +101,7 @@ const Plans = () => {
               <div className="grid md:grid-cols-3 gap-8">
                 {plans.map((plan, i) => (
                   <div
-                    key={plan.rpid}
+                    key={plan.id}
                     className={`relative ${plan.is_popular ? "pt-4" : ""}`}
                   >
                     {plan.is_popular && (
@@ -195,7 +196,7 @@ const Plans = () => {
                       </div>
 
                       <Link
-                        to="/subscribe"
+                        to={`/subscribe?planId=${plan.id}`}
                         className={
                           plan.is_popular
                             ? "btn-primary w-full"
@@ -229,7 +230,7 @@ const Plans = () => {
                         </th>
                         {plans.map((p) => (
                           <th
-                            key={p.rpid}
+                            key={p.id}
                             className="text-center py-3 px-4 font-display font-semibold text-gray-800"
                           >
                             {p.recharge_name}
@@ -242,7 +243,7 @@ const Plans = () => {
                         <tr key={f.key} className="border-b last:border-0">
                           <td className="py-3 px-4 text-gray-600">{f.label}</td>
                           {plans.map((p) => (
-                            <td key={p.rpid} className="text-center py-3 px-4">
+                            <td key={p.id} className="text-center py-3 px-4">
                               {f.bool ? (
                                 p[f.key] ? (
                                   <FiCheckCircle className="text-green-500 mx-auto" />

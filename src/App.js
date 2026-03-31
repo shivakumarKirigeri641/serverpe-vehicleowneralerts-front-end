@@ -22,6 +22,8 @@ const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Feedback = lazy(() => import("./pages/Feedback"));
 const ScanPage = lazy(() => import("./pages/ScanPage"));
+const ChatSession = lazy(() => import("./pages/ChatSession"));
+const ChatSync = lazy(() => import("./pages/ChatSync"));
 const Subscribe = lazy(() => import("./pages/Subscribe"));
 const Login = lazy(() => import("./pages/Login"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -43,10 +45,11 @@ const PaymentSuccess = lazy(() => import("./pages/dashboard/PaymentSuccess"));
 
 const AppLayout = () => {
   const location = useLocation();
-  const isScanPage = location.pathname.startsWith("/scan/");
+  const isScanPage = location.pathname.startsWith("/vehiclealerts/public/scan/");
   const isDashboard = location.pathname.startsWith("/dashboard");
   const isAuthPage = ["/login", "/subscribe"].includes(location.pathname);
-  const hideNavFooter = isScanPage || isDashboard || isAuthPage;
+  const isChatPage = location.pathname.startsWith("/vehiclealerts/public/scan/chat");
+  const hideNavFooter = isScanPage || isDashboard || isAuthPage || isChatPage;
 
   return (
     <>
@@ -66,7 +69,9 @@ const AppLayout = () => {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/feedback" element={<Feedback />} />
-          <Route path="/scan/:qrcodeNumber" element={<ScanPage />} />
+          <Route path="/vehiclealerts/public/scan/:qrcodeNumber" element={<ScanPage />} />
+          <Route path="/vehiclealerts/public/scan/chat" element={<ChatSession />} />          
+          <Route path="/vehiclealerts/public/scan/chat-sync/:alertId" element={<ChatSync />} />
           <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/login" element={<Login />} />
           <Route path="/privacy" element={<Privacy />} />
