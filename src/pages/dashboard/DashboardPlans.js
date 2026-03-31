@@ -1,14 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  FiCheckCircle,
-  FiX,
-  FiStar,
-  FiMapPin,
-  FiArrowRight,
-  FiCalendar,
-} from "react-icons/fi";
+import { FiCheckCircle, FiX, FiArrowRight, FiCalendar } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { getSubscriptionPlans } from "../../services/api";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -30,6 +23,39 @@ const DashboardPlans = () => {
       .catch(() => toast.error("Failed to load plans"))
       .finally(() => setLoading(false));
   }, []);
+
+  // Features mapped to API fields
+  const featureList = [
+    {
+      key: "alert_limit",
+      label: "Alerts",
+      format: (v) =>
+        v === 0 || v === undefined ? "Unlimited" : `${v} alert(s)`,
+    },
+    {
+      key: "validity_days",
+      label: "Validity",
+      format: (v) => (v === 0 ? "Trial / On-demand" : `${v} days`),
+    },
+    { key: "sms_backup", label: "SMS Notifications", bool: true },
+    {
+      key: "replies_per_alert",
+      label: "Replies per alert",
+      format: (v) => v ?? "—",
+    },
+    {
+      key: "report_modes",
+      label: "Report Modes",
+      format: (v) => v || "Not available",
+    },
+    { key: "alert_history", label: "Alert History", format: (v) => v || "—" },
+    {
+      key: "spam_protection",
+      label: "Spam Protection",
+      format: (v) => v || "Basic",
+    },
+    { key: "support", label: "Support", format: (v) => v || "Basic" },
+  ];
 
   const handleSelectPlan = async (plan) => {
     // Navigate to payment summary with plan ID
@@ -87,82 +113,31 @@ const DashboardPlans = () => {
             </div>
 
             <ul className="space-y-2 mb-6 flex-1 text-sm">
-              <li className="flex items-center gap-2">
-                <FiCheckCircle className="text-green-500 shrink-0" />
-                {plan.alert_limit === 0 || plan.alert_limit === undefined
-                  ? "Unlimited alerts"
-                  : `${plan.alert_limit} alert(s)`}
-              </li>
-              <li className="flex items-center gap-2">
-                {plan.sms_backup ? (
-                  <FiCheckCircle className="text-green-500 shrink-0" />
-                ) : (
-                  <FiX className="text-gray-300 shrink-0" />
-                )}
-                <span className={!plan.sms_backup ? "text-gray-400" : ""}>
-                  SMS Notifications
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                {plan.report_modes && plan.report_modes !== "Not available" ? (
-                  <FiCheckCircle className="text-green-500 shrink-0" />
-                ) : (
-                  <FiX className="text-gray-300 shrink-0" />
-                )}
-                <span
-                  className={
-                    !plan.report_modes || plan.report_modes === "Not available"
-                      ? "text-gray-400"
-                      : ""
-                  }
-                >
-                  WhatsApp Summaries
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                {/7\b|7 days|last 7|weekly/i.test(plan.report_modes || "") ? (
-                  <FiCalendar className="text-green-500 shrink-0" />
-                ) : (
-                  <FiX className="text-gray-300 shrink-0" />
-                )}
-                <span
-                  className={
-                    !/7\b|7 days|last 7|weekly/i.test(plan.report_modes || "")
-                      ? "text-gray-400"
-                      : ""
-                  }
-                >
-                  Weekly Summary
-                  {/7\b|7 days|last 7|weekly/i.test(
-                    plan.report_modes || "",
-                  ) && (
-                    <span className="ml-1 text-xs text-green-600 font-medium">
-                      (Every weekend)
+              {featureList.map((f) => {
+                const value = plan[f.key];
+                if (f.bool) {
+                  return (
+                    <li key={f.key} className="flex items-center gap-2">
+                      {value ? (
+                        <FiCheckCircle className="text-green-500 shrink-0" />
+                      ) : (
+                        <FiX className="text-gray-300 shrink-0" />
+                      )}
+                      <span className={!value ? "text-gray-400" : ""}>
+                        {f.label}
+                      </span>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={f.key} className="flex items-center gap-2">
+                    <FiCheckCircle className="text-green-500 shrink-0" />
+                    <span className="text-gray-700">
+                      {f.label}: <strong>{f.format(value)}</strong>
                     </span>
-                  )}
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                {/month|monthly/i.test(plan.report_modes || "") ? (
-                  <FiCalendar className="text-green-500 shrink-0" />
-                ) : (
-                  <FiX className="text-gray-300 shrink-0" />
-                )}
-                <span
-                  className={
-                    !/month|monthly/i.test(plan.report_modes || "")
-                      ? "text-gray-400"
-                      : ""
-                  }
-                >
-                  Monthly Summary
-                  {/month|monthly/i.test(plan.report_modes || "") && (
-                    <span className="ml-1 text-xs text-green-600 font-medium">
-                      (Every month-end)
-                    </span>
-                  )}
-                </span>
-              </li>
+                  </li>
+                );
+              })}
             </ul>
 
             <button
